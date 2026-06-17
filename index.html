@@ -1,0 +1,1785 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>나무증권 · 수급 분석</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* ── 헤더 ── */
+  --navy:          var(--navy);
+  --navy-text:     #FFFFFF;
+
+  /* ── 매수 (빨강) ── */
+  --buy:           #E83030;
+  --buy-light:     var(--buy-light);
+  --buy-text:      var(--buy-text);
+
+  /* ── 매도 (파랑) ── */
+  --sell:          #1A5FD4;
+  --sell-light:    var(--sell-light);
+  --sell-text:     var(--sell-text);
+
+  /* ── 기관별 고유색 ── */
+  --c-inst:        #1A5FD4;   /* 기관 전체  = 파랑  */
+  --c-fore:        #D97706;   /* 외국인     = 주황  */
+  --c-ind:         #E83030;   /* 개인       = 빨강  */
+  --c-ftg:         #1A5FD4;   /* 금융투자   = 파랑  */
+  --c-tsin:        #D97706;   /* 투신       = 주황  */
+  --c-ins:         #E83030;   /* 보험       = 빨강  */
+  --c-pens:        #1D9E6B;   /* 연기금     = 초록  */
+  --c-priv:        #6B46C8;   /* 사모펀드   = 보라  */
+
+  /* ── 보조 의미색 ── */
+  --green:         #1D9E6B;
+  --green-light:   var(--green-light);
+  --green-text:    var(--green-text);
+  --amber:         #D97706;
+  --amber-light:   var(--amber-light);
+  --amber-text:    var(--amber-text);
+  --purple:        #6B46C8;
+  --purple-light:  var(--purple-light);
+  --purple-text:   var(--purple-text);
+
+  /* ── 나무 브랜드 라임 (강조 포인트) ── */
+  --lime:          var(--lime);
+  --lime-dark:     var(--lime-dark);
+  --lime-light:    var(--lime-light);
+  --lime-text:     var(--lime-text);
+
+  /* ── 배경·서피스 ── */
+  --bg:            var(--bg);
+  --surface:       #FFFFFF;
+  --surface2:      var(--surface2);
+  --border:        rgba(0,0,0,0.07);
+  --border-mid:    rgba(0,0,0,0.12);
+
+  /* ── 텍스트 ── */
+  --text1:         var(--text1);
+  --text2:         var(--text2);
+  --text3:         var(--text3);
+
+  /* ── 라디우스 ── */
+  --radius-sm:  8px;
+  --radius-md:  12px;
+  --radius-lg:  16px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  background: #0E1108;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  padding: 0;
+}
+
+.device-frame {
+  width: 100%;
+  max-width: 390px;
+  min-height: 100vh;
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── STATUS BAR ── */
+.statusbar {
+  background: var(--navy);
+  padding: 10px 20px 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+.statusbar-time { font-size: 12px; font-weight: 700; color: var(--navy-text); letter-spacing: 0.3px; }
+.statusbar-icons { display: flex; gap: 6px; align-items: center; }
+.statusbar-icons svg { width: 14px; height: 14px; fill: var(--navy-text); }
+
+/* ── TOP NAV ── */
+.topnav {
+  background: var(--lime);
+  padding: 6px 16px 0;
+  flex-shrink: 0;
+}
+.topnav-row1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 10px;
+}
+.nav-back {
+  width: 32px; height: 32px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.2);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0;
+  background: rgba(255,255,255,0.08);
+  transition: background 0.15s;
+}
+.nav-back:active { background: rgba(255,255,255,0.18); }
+.nav-back svg { width: 16px; height: 16px; stroke: var(--navy-text); fill: none; stroke-width: 2; stroke-linecap: round; }
+.nav-stock-wrap { flex: 1; }
+.nav-stock-name { font-size: 17px; font-weight: 600; color: var(--navy-text); }
+.nav-stock-meta { font-size: 12px; color: rgba(255,255,255,0.55); margin-top: 1px; }
+.nav-price { font-size: 14px; font-weight: 600; color: var(--buy); }
+.nav-actions { display: flex; gap: 6px; }
+.nav-btn {
+  height: 32px; padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.2);
+  font-size: 13px; font-weight: 500; color: var(--navy-text);
+  background: rgba(255,255,255,0.08); cursor: pointer; display: flex; align-items: center; gap: 4px;
+  transition: background 0.15s;
+}
+.nav-btn:active { background: rgba(255,255,255,0.18); }
+.nav-btn.primary { background: var(--buy); border-color: var(--buy); color: #fff; }
+.nav-btn svg { width: 14px; height: 14px; stroke: var(--text1); fill: none; stroke-width: 2; stroke-linecap: round; }
+.nav-btn.primary svg { stroke: #fff; }
+
+.stock-tabs-wrap {
+  display: flex; overflow-x: auto;
+  scrollbar-width: none; padding: 0 2px;
+}
+.stock-tabs-wrap::-webkit-scrollbar { display: none; }
+.stock-tab {
+  font-size: 13px; color: rgba(255,255,255,0.45);
+  padding: 8px 12px; white-space: nowrap;
+  border-bottom: 2.5px solid transparent;
+  cursor: pointer; transition: color 0.15s;
+  flex-shrink: 0;
+}
+.stock-tab.on { color: var(--navy-text); border-bottom-color: var(--lime); font-weight: 600; }
+
+/* ── CONTENT SCROLL ── */
+.content-area {
+  flex: 1; overflow-y: auto;
+  scrollbar-width: none;
+  padding-bottom: 72px;
+}
+.content-area::-webkit-scrollbar { display: none; }
+
+/* ── SECTION ── */
+.section {
+  background: var(--surface);
+  margin-bottom: 8px;
+  padding: 16px;
+}
+.section:first-child { margin-top: 0; }
+.section-hd {
+  display: flex; justify-content: space-between;
+  align-items: center; margin-bottom: 14px;
+}
+.section-title { font-size: 14px; font-weight: 600; color: var(--text1); }
+.section-note { font-size: 11px; color: var(--text3); }
+
+/* 나무 스텝 필 */
+.step-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 500;
+  padding: 3px 9px 3px 4px; border-radius: 20px;
+  background: var(--lime-light); color: var(--lime-text);
+  margin-bottom: 10px; border: 1px solid rgba(176,231,21,0.3);
+}
+.step-num {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--lime); color: var(--text1);
+  font-size: 10px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ── BADGE ── */
+.badge {
+  display: inline-block; font-size: 10px; font-weight: 500;
+  padding: 2px 8px; border-radius: 20px;
+}
+.badge-buy { background: var(--buy-light); color: var(--buy-text); }
+.badge-sell { background: var(--sell-light); color: var(--sell-text); }
+.badge-green { background: var(--green-light); color: var(--green-text); }
+.badge-amber { background: var(--amber-light); color: var(--amber-text); }
+.badge-purple { background: var(--purple-light); color: var(--purple-text); }
+.badge-gray { background: var(--gray-light); color: var(--gray-text); }
+.badge-lime { background: var(--lime-light); color: var(--lime-text); }
+
+
+/* ── DIRECTION CARDS ── */
+.dir-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.dir-card {
+  border-radius: var(--radius-md);
+  padding: 12px;
+  border: 1px solid var(--border);
+}
+.dir-card.full { grid-column: 1 / -1; }
+.dir-card.buy-card { background: linear-gradient(135deg, var(--buy-light) 0%, var(--buy-light) 100%); border-color: rgba(226,75,74,0.15); }
+.dir-card.sell-card { background: linear-gradient(135deg, var(--sell-light) 0%, var(--sell-light) 100%); border-color: rgba(43,107,230,0.15); }
+.dir-label { font-size: 11px; font-weight: 500; margin-bottom: 4px; }
+.dir-label.buy { color: var(--buy-text); }
+.dir-label.sell { color: var(--sell-text); }
+.dir-val { font-size: 20px; font-weight: 600; }
+.dir-val.buy { color: var(--buy); }
+.dir-val.sell { color: var(--sell); }
+.dir-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
+.dir-detail { margin-top: 10px; padding-top: 9px; border-top: 1px solid rgba(43,107,230,0.12); font-size: 11px; color: var(--sell-text); }
+
+/* VS BAR */
+.vs-wrap { margin-top: 12px; }
+.vs-bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; }
+.vs-buy { background: var(--buy); }
+.vs-sell { background: var(--sell); }
+.vs-labels { display: flex; justify-content: space-between; margin-top: 5px; font-size: 11px; }
+.vs-labels span:first-child { color: var(--buy-text); font-weight: 500; }
+.vs-labels span:last-child { color: var(--sell-text); font-weight: 500; }
+
+/* ── PERIOD TABS ── */
+.period-tabs { display: flex; gap: 4px; }
+.ptab {
+  font-size: 11px; padding: 4px 10px; border-radius: 20px;
+  border: 1.5px solid var(--border-mid);
+  background: var(--surface2);
+  color: var(--text2); cursor: pointer; transition: all 0.15s;
+  font-weight: 500;
+}
+.ptab.on {
+  background: var(--sell); color: #fff;
+  border-color: var(--sell); font-weight: 600;
+}
+
+/* ── LAYER TABS ── */
+.ltabs { display: flex; gap: 5px; margin-bottom: 12px; flex-wrap: wrap; }
+.ltab {
+  font-size: 12px; padding: 5px 12px; border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border-mid);
+  background: var(--surface2);
+  color: var(--text2); cursor: pointer; transition: all 0.15s;
+  font-weight: 500;
+}
+.ltab.on {
+  background: var(--sell); color: #fff;
+  border-color: var(--sell); font-weight: 600;
+}
+.ltab.detail { border-style: dashed; }
+
+/* ── CHART ── */
+.chart-bg {
+  background: var(--surface2); border-radius: var(--radius-md);
+  padding: 12px 8px 8px; margin-bottom: 12px;
+  border: 1px solid var(--border);
+}
+.chart-legend { display: flex; gap: 12px; margin-top: 6px; }
+.cleg { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text2); }
+.cleg-line { width: 16px; height: 2.5px; border-radius: 2px; }
+
+/* ── DETAIL PANEL ── */
+.detail-box {
+  background: var(--surface2); border-radius: var(--radius-md);
+  padding: 12px; margin-bottom: 12px;
+  border: 1px solid var(--border);
+}
+.detail-box-title { font-size: 11px; font-weight: 600; color: var(--text2); margin-bottom: 10px; }
+.drow { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+.drow:last-child { margin-bottom: 0; }
+.dname { font-size: 11px; color: var(--text2); width: 44px; flex-shrink: 0; }
+.dtrack { flex: 1; background: var(--surface); border-radius: 3px; height: 18px; overflow: hidden; }
+.dfill { height: 18px; display: flex; align-items: center; padding: 0 8px; border-radius: 3px; }
+.dfill-t { font-size: 10px; font-weight: 500; white-space: nowrap; }
+
+/* ── CUMUL CARDS ── */
+.cum-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.cum-card {
+  background: var(--surface2); border-radius: var(--radius-md);
+  padding: 10px 12px; border: 1px solid var(--border);
+}
+.cum-label { font-size: 11px; color: var(--text3); margin-bottom: 3px; }
+.cum-val { font-size: 16px; font-weight: 600; }
+.cum-sub { font-size: 10px; color: var(--text3); margin-top: 2px; }
+
+/* ── INTENSITY ── */
+.int-box {
+  background: var(--surface2); border-radius: var(--radius-md);
+  padding: 12px; margin-bottom: 10px;
+  border: 1px solid var(--border);
+}
+.irow { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.irow:last-child { margin-bottom: 0; }
+.ientity { font-size: 12px; color: var(--text2); width: 38px; flex-shrink: 0; }
+.itrack { flex: 1; background: var(--surface); border-radius: 4px; height: 22px; overflow: hidden; }
+.ifill { height: 22px; display: flex; align-items: center; padding: 0 8px; border-radius: 4px; }
+.itext { font-size: 10px; font-weight: 500; white-space: nowrap; }
+.iright { min-width: 52px; text-align: right; }
+
+/* ── SECTOR ── */
+.sector-item { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.sector-item:last-child { margin-bottom: 0; }
+.sname { font-size: 12px; color: var(--text2); width: 58px; flex-shrink: 0; }
+.sname.hl { color: var(--text1); font-weight: 600; }
+.strack { flex: 1; background: var(--surface2); border-radius: 4px; height: 8px; overflow: hidden; }
+.sfill { height: 8px; border-radius: 4px; }
+.sval { font-size: 12px; font-weight: 500; min-width: 44px; text-align: right; }
+.callout {
+  padding: 10px 14px;
+  background: var(--sell-light);
+  border-left: 3px solid var(--sell);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-size: 12px; line-height: 1.55; color: var(--text1);
+  margin-top: 10px;
+}
+
+/* ── INSIGHT ── */
+.ins-row {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.ins-row:last-child { border-bottom: none; padding-bottom: 0; }
+.ins-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+.ins-body {}
+.ins-main { font-size: 13px; color: var(--text1); line-height: 1.45; }
+.ins-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+/* ── ENTRY CARD ── */
+.entry-bridge {
+  background: var(--surface2); padding: 14px 16px;
+  margin-bottom: 8px;
+}
+.bridge-label {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 10px;
+}
+.bridge-line { height: 1px; background: var(--border-mid); flex: 1; }
+.bridge-text { font-size: 11px; color: var(--text3); white-space: nowrap; font-weight: 500; }
+.entry-card {
+  background: var(--surface); border-radius: var(--radius-lg);
+  padding: 14px; cursor: pointer;
+  border: 1px solid var(--border-mid);
+  transition: border-color 0.15s;
+}
+.entry-card:active { border-color: var(--lime); }
+.entry-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+.entry-title { font-size: 14px; font-weight: 600; color: var(--text1); }
+.entry-desc { font-size: 11px; color: var(--text2); margin-top: 3px; }
+.entry-arrow {
+  width: 30px; height: 30px; border-radius: 10px;
+  background: var(--lime); display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.entry-arrow svg { width: 14px; height: 14px; stroke: var(--text1); fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.entry-pills { display: flex; gap: 5px; flex-wrap: wrap; }
+
+/* ── BOTTOM NAV ── */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 390px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex; z-index: 100;
+  padding: 8px 0 12px;
+}
+.bn-item {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; gap: 3px; cursor: pointer;
+}
+.bn-icon { font-size: 22px; color: var(--text3); line-height: 1; }
+.bn-icon.on { color: var(--lime-darker, var(--lime-dark)); }
+.bn-label { font-size: 10px; color: var(--text3); }
+.bn-label.on { color: var(--text1); font-weight: 600; }
+
+/* ── MARKET PAGE HEADER ── */
+.market-header {
+  background: var(--navy);
+  padding: 10px 16px 12px;
+  flex-shrink: 0;
+}
+.mh-row { display: flex; align-items: center; gap: 10px; }
+.mh-title { font-size: 17px; font-weight: 600; color: var(--navy-text); }
+.mh-sub { font-size: 11px; color: rgba(255,255,255,0.55); margin-top: 3px; padding-left: 42px; }
+.breadcrumb {
+  background: var(--surface);
+  padding: 9px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px; color: var(--text3);
+  flex-shrink: 0;
+}
+.bc-link { color: var(--lime-dark); font-weight: 600; cursor: pointer; }
+.bc-link:active { opacity: 0.7; }
+
+/* ── RANK ITEM ── */
+.rank-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.rank-item:last-child { border-bottom: none; }
+.rnum { font-size: 12px; color: var(--text3); width: 18px; flex-shrink: 0; font-weight: 600; }
+.rnum.top {
+  width: 20px; height: 20px; border-radius: 6px;
+  background: var(--lime); color: var(--text1);
+  font-size: 10px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.rname { font-size: 14px; font-weight: 500; color: var(--text1); }
+.rsector { font-size: 11px; color: var(--text3); margin-top: 1px; }
+.rval { font-size: 14px; font-weight: 600; }
+.rsub { font-size: 10px; color: var(--text3); margin-top: 1px; text-align: right; }
+.more-link { font-size: 12px; color: var(--lime-dark); font-weight: 600; padding: 8px 0; cursor: pointer; display: block; }
+
+/* ── ALARM ITEM ── */
+.alarm-item {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 12px 0; border-bottom: 1px solid var(--border);
+}
+.alarm-item:last-child { border-bottom: none; padding-bottom: 0; }
+.alarm-icon {
+  width: 36px; height: 36px; border-radius: 11px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.alarm-icon svg { width: 18px; height: 18px; stroke-width: 1.8; stroke-linecap: round; fill: none; }
+.alarm-body { flex: 1; }
+.alarm-title { font-size: 13px; font-weight: 500; color: var(--text1); line-height: 1.4; margin-bottom: 3px; }
+.alarm-desc { font-size: 11px; color: var(--text2); line-height: 1.5; }
+.alarm-meta { display: flex; align-items: center; gap: 5px; margin-top: 6px; flex-wrap: wrap; }
+.alarm-time { font-size: 10px; color: var(--text3); }
+
+/* ── PF ITEM ── */
+.pf-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 0; border-bottom: 1px solid var(--border);
+}
+.pf-item:last-child { border-bottom: none; padding-bottom: 0; }
+.pf-left { flex: 1; }
+.pf-name { font-size: 14px; font-weight: 500; color: var(--text1); display: flex; align-items: center; gap: 5px; margin-bottom: 2px; }
+.pf-desc { font-size: 11px; color: var(--text2); }
+.pf-right { text-align: right; flex-shrink: 0; }
+.pf-val { font-size: 14px; font-weight: 600; }
+.pf-sub { font-size: 10px; color: var(--text3); margin-top: 1px; }
+
+/* ── DISCOVER ITEM ── */
+.disc-item { padding: 12px 0; border-bottom: 1px solid var(--border); }
+.disc-item:last-child { border-bottom: none; padding-bottom: 0; }
+.disc-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+.disc-name { font-size: 14px; font-weight: 500; color: var(--text1); }
+.disc-sector { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.disc-val { font-size: 14px; font-weight: 600; }
+.disc-sub { font-size: 10px; color: var(--text3); margin-top: 2px; text-align: right; }
+.disc-tags { display: flex; gap: 5px; flex-wrap: wrap; }
+
+/* ── FEED CARD ── */
+.feed-card {
+  background: var(--surface); border-radius: var(--radius-lg);
+  padding: 14px; margin-bottom: 8px;
+  border: 1px solid var(--border);
+  transition: border-color 0.15s;
+}
+.feed-card:last-child { margin-bottom: 0; }
+.feed-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 7px; }
+.feed-title { font-size: 13px; font-weight: 600; color: var(--text1); line-height: 1.4; flex: 1; }
+.feed-time { font-size: 10px; color: var(--text3); white-space: nowrap; margin-left: 8px; }
+.feed-body { font-size: 12px; color: var(--text2); line-height: 1.6; margin-bottom: 9px; }
+.feed-footer { display: flex; gap: 5px; flex-wrap: wrap; }
+
+/* ── REPORT ROW ── */
+.report-box {
+  background: var(--surface2); border-radius: var(--radius-md);
+  padding: 4px 0; border: 1px solid var(--border);
+  overflow: hidden;
+}
+.report-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+}
+.report-row:last-child { border-bottom: none; }
+.rr-left { font-size: 12px; color: var(--text2); }
+.rr-right { font-size: 12px; font-weight: 600; }
+
+/* ── NOTICE ── */
+.notice {
+  padding: 10px 12px; border-radius: var(--radius-md);
+  display: flex; align-items: flex-start; gap: 8px;
+  font-size: 11px; line-height: 1.55;
+}
+.notice svg { width: 16px; height: 16px; flex-shrink: 0; stroke-width: 1.8; fill: none; stroke-linecap: round; }
+.small-notice {
+  font-size: 11px; color: var(--text3); line-height: 1.55;
+  padding: 10px 14px;
+  background: var(--surface2);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+}
+.small-notice a { color: var(--lime-dark); font-weight: 500; }
+
+/* ── PAGE SWITCHING ── */
+.page { display: none; flex-direction: column; height: 100%; }
+.page.active { display: flex; }
+
+/* ── FILTER TABS ── */
+.filter-tabs { display: flex; background: var(--surface2); border-radius: var(--radius-md); padding: 3px; margin-bottom: 12px; border: 1px solid var(--border); }
+.ftab {
+  flex: 1; text-align: center; font-size: 12px; font-weight: 500;
+  padding: 6px 4px; border-radius: 9px; cursor: pointer;
+  color: var(--text2); transition: all 0.15s;
+}
+.ftab.on { background: var(--surface); color: var(--text1); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+/* ── SIGNAL BADGE ── */
+.signal-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 12px; border-radius: 20px;
+  font-size: 12px; font-weight: 600;
+}
+.signal-mixed { background: var(--amber-light); color: var(--amber-text); }
+
+/* ── BUTTON ROW ── */
+.btn-row { display: flex; gap: 8px; margin-top: 10px; }
+.ghost-btn {
+  flex: 1; padding: 9px 12px; border-radius: var(--radius-md);
+  border: 1px solid var(--border-mid);
+  background: var(--surface); color: var(--text2);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+  transition: all 0.15s;
+}
+.ghost-btn:active { background: var(--lime-light); border-color: var(--lime); }
+.ghost-btn svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.section-divider { height: 8px; background: var(--bg); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="device-frame">
+
+<!-- ══════════════════════════════
+     PAGE: STOCK (투자자 탭)
+══════════════════════════════ -->
+<div class="page active" id="page-stock">
+  <div class="statusbar">
+    <span class="statusbar-time">9:41</span>
+    <div class="statusbar-icons">
+      <svg viewBox="0 0 24 24"><path d="M1 6l5 5 5-5 5 5 5-5"/></svg>
+      <svg viewBox="0 0 24 24"><rect x="2" y="7" width="16" height="10" rx="2"/><path d="M20 11v2"/></svg>
+    </div>
+  </div>
+  <div class="topnav">
+    <div class="topnav-row1">
+      <div class="nav-back" id="s-back">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      </div>
+      <div class="nav-stock-wrap">
+        <div class="nav-stock-name">삼성전자</div>
+        <div class="nav-stock-meta">
+          <span class="nav-price">313,500 ▲ 18,000 (6.09%)</span>
+        </div>
+      </div>
+      <div class="nav-actions">
+        <div class="nav-btn">
+          <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        </div>
+        <div class="nav-btn primary">주문</div>
+      </div>
+    </div>
+    <div class="stock-tabs-wrap">
+      <div class="stock-tab">커뮤니티</div>
+      <div class="stock-tab">NH데이터</div>
+      <div class="stock-tab">거래원</div>
+      <div class="stock-tab on">투자자</div>
+      <div class="stock-tab">수급</div>
+      <div class="stock-tab">뉴스</div>
+    </div>
+  </div>
+  <div class="content-area">
+
+    <div class="section">
+      <div class="step-pill"><span class="step-num">1</span> 오늘 누가 샀고 팔았나</div>
+      <div class="section-hd">
+        <span class="section-title">투자자별 오늘 동향</span>
+        <span class="section-note">2026.06.09 장중</span>
+      </div>
+
+      <!-- 스택 바 -->
+      <div style="font-size:11px;color:var(--text3);margin-bottom:5px;">오늘 총 거래대금 기준 구성</div>
+      <div style="display:flex;height:10px;border-radius:5px;overflow:hidden;margin-bottom:8px;">
+        <div style="width:54%;background:var(--buy);"></div>
+        <div style="width:15%;background:var(--sell);opacity:.55;"></div>
+        <div style="width:31%;background:var(--sell);"></div>
+      </div>
+      <div style="display:flex;gap:12px;margin-bottom:14px;">
+        <div style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);"><div style="width:8px;height:8px;border-radius:50%;background:var(--buy);"></div>개인 54%</div>
+        <div style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);"><div style="width:8px;height:8px;border-radius:50%;background:var(--sell);opacity:.55;"></div>외국인 15%</div>
+        <div style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);"><div style="width:8px;height:8px;border-radius:50%;background:var(--sell);"></div>기관 31%</div>
+      </div>
+
+      <!-- 주체별 수치 행 -->
+      <div style="display:flex;flex-direction:column;gap:0;">
+        <!-- 개인 -->
+        <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:0.5px solid var(--border);">
+          <div style="display:flex;align-items:center;gap:7px;flex:1;">
+            <div style="width:36px;height:5px;border-radius:3px;background:var(--surface2);overflow:hidden;"><div style="width:78%;height:5px;background:var(--buy);border-radius:3px;"></div></div>
+            <span style="font-size:13px;color:var(--text1);">개인</span>
+            <span class="badge badge-buy" style="font-size:9px;">순매수</span>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:14px;font-weight:600;color:var(--buy);">+1,966억</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:1px;">+627만주</div>
+          </div>
+        </div>
+        <!-- 외국인 -->
+        <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:0.5px solid var(--border);">
+          <div style="display:flex;align-items:center;gap:7px;flex:1;">
+            <div style="width:36px;height:5px;border-radius:3px;background:var(--surface2);overflow:hidden;"><div style="width:23%;height:5px;background:var(--sell);border-radius:3px;"></div></div>
+            <span style="font-size:13px;color:var(--text1);">외국인</span>
+            <span class="badge badge-sell" style="font-size:9px;">순매도</span>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:14px;font-weight:600;color:var(--sell);">−444억</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:1px;">−142만주</div>
+          </div>
+        </div>
+        <!-- 기관 -->
+        <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:0.5px solid var(--border);">
+          <div style="display:flex;align-items:center;gap:7px;flex:1;">
+            <div style="width:36px;height:5px;border-radius:3px;background:var(--surface2);overflow:hidden;"><div style="width:85%;height:5px;background:var(--sell);border-radius:3px;"></div></div>
+            <span style="font-size:13px;color:var(--text1);">기관</span>
+            <span class="badge badge-sell" style="font-size:9px;">순매도</span>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:14px;font-weight:600;color:var(--sell);">−1,655억</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:1px;">−528만주</div>
+          </div>
+        </div>
+        <!-- 기관 세부 -->
+        <div style="padding:9px 0 0;">
+          <div style="font-size:11px;color:var(--text3);padding:6px 10px;background:var(--surface2);border-radius:var(--radius-sm);">
+            금융투자 −408억 &nbsp;·&nbsp; 투신 −91억 &nbsp;·&nbsp; 연기금 +12억 &nbsp;·&nbsp; 보험 −58억
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="step-pill"><span class="step-num">2</span> 흐름이 며칠째 이어지나</div>
+
+      <!-- 상단: 타이틀 + 기간 탭 -->
+      <div class="section-hd">
+        <span class="section-title">일별 순매수 추이</span>
+        <div style="display:flex;gap:3px;" id="s2-per-tabs">
+          <button class="ptab" data-p="1W">1W</button>
+          <button class="ptab" data-p="1M">1M</button>
+          <button class="ptab on" data-p="3M">3M</button>
+          <button class="ptab" data-p="6M">6M</button>
+        </div>
+      </div>
+
+      <!-- 일별 / 누적 타입 탭 -->
+      <div style="display:flex;background:#E8EAE4;border-radius:var(--radius-md);padding:3px;margin-bottom:10px;border:1px solid var(--border-mid);" id="s2-type-tabs">
+        <div style="flex:1;text-align:center;font-size:11px;font-weight:600;padding:5px;border-radius:9px;cursor:pointer;background:#1A5FD4;color:#fff;" data-t="daily" id="s2-tt-daily">일별</div>
+        <div style="flex:1;text-align:center;font-size:11px;font-weight:500;padding:5px;border-radius:9px;cursor:pointer;background:#F0F1EC;color:#484D42;" data-t="cumul" id="s2-tt-cumul">누적</div>
+      </div>
+
+      <!-- 주체 탭 -->
+      <div style="display:flex;gap:4px;flex-wrap:wrap;" id="s2-ent-tabs">
+        <button class="ltab on" data-e="inst">기관</button>
+        <button class="ltab" data-e="fore">외국인</button>
+        <button class="ltab" data-e="ind">개인</button>
+        <button class="ltab" id="s2-det-btn" style="font-size:11px;padding:5px 12px;border-radius:6px;border:1.5px dashed rgba(0,0,0,0.20);background:#F0F1EC;color:#484D42;cursor:pointer;font-weight:500;">세부 ↓</button>
+      </div>
+
+      <!-- 세부 패널 -->
+      <div id="s2-sub-panel" style="display:none;margin-top:10px;background:var(--surface2);border-radius:var(--radius-md);padding:10px;border:0.5px solid var(--border);">
+        <div style="font-size:10px;font-weight:500;color:var(--text3);margin-bottom:8px;letter-spacing:.3px;">기관 세부 주체 선택</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;" id="s2-sub-row"></div>
+      </div>
+
+      <!-- 차트 헤더: 동그라미 · 이름 · 누적 수치 -->
+      <div style="display:flex;align-items:center;gap:6px;margin-top:12px;margin-bottom:6px;">
+        <div id="s2-dot" style="width:8px;height:8px;border-radius:50%;background:#1A5FD4;flex-shrink:0;"></div>
+        <span id="s2-name" style="font-size:12px;font-weight:500;color:var(--text1);">기관</span>
+        <span id="s2-cumval" style="display:none;font-size:12px;font-weight:500;padding:2px 8px;border-radius:20px;"></span>
+      </div>
+
+      <!-- SVG 차트 -->
+      <svg id="s2-svg" width="100%" viewBox="0 0 340 100" style="display:block;"></svg>
+
+      <!-- 레전드 -->
+      <div id="s2-legend" style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap;"></div>
+    </div>
+
+    <div class="section">
+      <div class="step-pill"><span class="step-num">3</span> 이 수급이 얼마나 강한가</div>
+      <div class="section-hd">
+        <span class="section-title">수급 강도 분석</span>
+        <span class="section-note" id="s3-note">기관 · 오늘</span>
+      </div>
+
+      <!-- 주체 탭 -->
+      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px;" id="s3-etabs">
+        <button class="ltab on" data-e="inst">기관</button>
+        <button class="ltab" data-e="fore">외국인</button>
+        <button class="ltab" data-e="ind">개인</button>
+        <button class="ltab" id="s3-detbtn" style="font-size:11px;padding:5px 12px;border-radius:6px;border:1.5px dashed rgba(0,0,0,0.20);background:#F0F1EC;color:#484D42;cursor:pointer;font-weight:500;">세부 ↓</button>
+      </div>
+
+      <!-- 세부 패널 -->
+      <div id="s3-subpanel" style="display:none;background:var(--surface2);border-radius:var(--radius-md);padding:10px;margin-bottom:12px;border:0.5px solid var(--border);">
+        <div style="font-size:10px;font-weight:500;color:var(--text3);margin-bottom:8px;">기관 세부 주체 선택</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;" id="s3-subrow"></div>
+      </div>
+
+      <!-- 레이더 2개 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+        <div id="s3-sell-box" style="border-radius:12px;padding:12px 10px;text-align:center;">
+          <div id="s3-sell-title" style="font-size:11px;font-weight:600;margin-bottom:4px;">매도 강도</div>
+          <svg id="s3-sell-svg" width="110" height="110" viewBox="0 0 110 110" style="display:block;margin:0 auto;"></svg>
+          <div id="s3-sell-ranks" style="font-size:11px;margin-top:6px;line-height:1.65;"></div>
+        </div>
+        <div id="s3-buy-box" style="border-radius:12px;padding:12px 10px;text-align:center;">
+          <div id="s3-buy-title" style="font-size:11px;font-weight:600;margin-bottom:4px;">매수 강도</div>
+          <svg id="s3-buy-svg" width="110" height="110" viewBox="0 0 110 110" style="display:block;margin:0 auto;"></svg>
+          <div id="s3-buy-ranks" style="font-size:11px;margin-top:6px;line-height:1.65;"></div>
+        </div>
+      </div>
+
+      <!-- 구분선 -->
+      <div style="height:0.5px;background:var(--border);margin-bottom:14px;"></div>
+
+      <!-- 상세 강도 리스트 -->
+      <div id="s3-detail-list" style="display:flex;flex-direction:column;gap:0;"></div>
+
+      <!-- 요약 -->
+      <div id="s3-summary" style="margin-top:14px;padding:10px 12px;border-radius:var(--radius-md);font-size:12px;line-height:1.6;"></div>
+    </div>
+
+    <div class="section">
+      <div class="step-pill"><span class="step-num">4</span> 섹터 안에서의 위치</div>
+      <div class="section-hd">
+        <span class="section-title">섹터 안에서의 위치</span>
+        <span class="section-note" id="s4-note">반도체 · 기관</span>
+      </div>
+
+      <!-- 보기 모드 탭 -->
+      <div style="display:flex;background:#E8EAE4;border-radius:8px;padding:3px;margin-bottom:10px;border:1px solid var(--border-mid);" id="s4-mode-tabs">
+        <div style="flex:1;text-align:center;font-size:11px;font-weight:600;padding:5px;border-radius:6px;cursor:pointer;background:#fff;color:var(--sell);" data-m="amt">순매수금액</div>
+        <div style="flex:1;text-align:center;font-size:11px;font-weight:500;padding:5px;border-radius:6px;cursor:pointer;color:var(--text2);" data-m="pct">시총 대비 %</div>
+      </div>
+
+      <!-- 주체 탭 -->
+      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px;" id="s4-tabs">
+        <button class="ltab on" data-e="inst">기관</button>
+        <button class="ltab" data-e="fore">외국인</button>
+        <button class="ltab" data-e="ind">개인</button>
+        <button class="ltab" id="s4-detbtn">세부 ↓</button>
+      </div>
+
+      <!-- 세부 패널 -->
+      <div id="s4-subpanel" style="display:none;background:var(--surface2);border-radius:var(--radius-md);padding:9px;margin-bottom:10px;border:0.5px solid var(--border);">
+        <div style="font-size:10px;color:var(--text3);margin-bottom:7px;font-weight:500;">기관 세부 주체 선택</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;" id="s4-subrow"></div>
+      </div>
+
+      <!-- 현재 종목 표시 -->
+      <div style="display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:2px 8px;border-radius:20px;background:var(--sell-light);color:var(--sell);font-weight:500;margin-bottom:10px;">📍 현재 종목: 삼성전자</div>
+
+      <!-- 종목 리스트 -->
+      <div id="s4-list" style="display:flex;flex-direction:column;"></div>
+
+      <!-- 레전드 -->
+      <div style="display:flex;gap:12px;margin-top:8px;">
+        <div style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);"><div style="width:8px;height:8px;border-radius:50%;background:var(--buy);"></div>순매수</div>
+        <div style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);"><div style="width:8px;height:8px;border-radius:50%;background:var(--sell);"></div>순매도</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="step-pill"><span class="step-num">5</span> AI 수급 인사이트</div>
+      <div class="section-hd">
+        <span class="section-title">수급 인사이트</span>
+        <span class="section-note">AI 분석 · 참고용</span>
+      </div>
+
+      <!-- 부정 인사이트 -->
+      <div style="font-size:10px;font-weight:600;color:var(--sell-text);letter-spacing:.3px;margin-bottom:6px;padding:3px 8px;background:var(--sell-light);border-radius:4px;display:inline-block;">주의</div>
+      <div class="ins-row">
+        <div class="ins-dot" style="background:var(--sell);"></div>
+        <div class="ins-body">
+          <div class="ins-main">기관 매도 강도 1년 중 11번째 — <span style="color:var(--sell-text);font-weight:600;">이례적 수준</span></div>
+          <div class="ins-sub">절대·상대·시간 강도 모두 상위 5% 이내. 단순 차익실현 이상의 신호일 수 있음</div>
+        </div>
+      </div>
+      <div class="ins-row">
+        <div class="ins-dot" style="background:var(--sell);"></div>
+        <div class="ins-body">
+          <div class="ins-main">외국인도 3개월 누적 순매도 지속 <span class="badge badge-sell" style="margin-left:3px;">주목</span></div>
+          <div class="ins-sub">기관과 외국인 동반 매도 — 수급 주체 이탈 가능성 점검 필요</div>
+        </div>
+      </div>
+      <div class="ins-row">
+        <div class="ins-dot" style="background:var(--amber);"></div>
+        <div class="ins-body">
+          <div class="ins-main">개인이 기관·외국인 물량 대부분 흡수 중</div>
+          <div class="ins-sub">3개월째 지속 — 단기 수급 불균형 심화 우려</div>
+        </div>
+      </div>
+
+      <!-- 긍정 인사이트 -->
+      <div style="font-size:10px;font-weight:600;color:var(--green-text);letter-spacing:.3px;margin-bottom:6px;margin-top:12px;padding:3px 8px;background:var(--green-light);border-radius:4px;display:inline-block;">긍정</div>
+      <div class="ins-row">
+        <div class="ins-dot" style="background:var(--green);"></div>
+        <div class="ins-body">
+          <div class="ins-main">반도체 섹터 내 삼성전자에 집중된 매도 <span class="badge badge-green" style="margin-left:3px;">참고</span></div>
+          <div class="ins-sub">SK하이닉스 등 동종 기업 미동 — 섹터 전반 이슈 아닌 종목 특이 수급</div>
+        </div>
+      </div>
+      <div class="ins-row">
+        <div class="ins-dot" style="background:var(--green);"></div>
+        <div class="ins-body">
+          <div class="ins-main">연기금은 오늘도 소폭 순매수 유지</div>
+          <div class="ins-sub">기관 내 역방향 매수 — 장기 투자 관점에서의 저가 매수 신호로 해석 가능</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="entry-bridge">
+      <div class="bridge-label">
+        <div class="bridge-line"></div>
+        <span class="bridge-text">시장 전체 수급으로 이어보기</span>
+        <div class="bridge-line"></div>
+      </div>
+      <div class="entry-card" id="btn-go-market">
+        <div class="entry-row">
+          <div>
+            <div class="entry-title">오늘 코스피 수급 현황</div>
+            <div class="entry-desc">기관·외국인이 시장 전체에서 어떻게 움직였나</div>
+          </div>
+          <div class="entry-arrow">
+            <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+        </div>
+        <div class="entry-pills">
+          <span class="badge badge-lime">코스피 기관 +2,840억</span>
+          <span class="badge badge-amber">외국인 3일 연속 매도</span>
+          <span class="badge badge-green">업종별 수급 지도</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="bn-item"><span class="bn-icon">🏠</span><span class="bn-label">홈</span></div>
+    <div class="bn-item"><span class="bn-icon">⭐</span><span class="bn-label">관심</span></div>
+    <div class="bn-item"><span class="bn-icon on" style="color:var(--lime-dark);">📊</span><span class="bn-label on">주식</span></div>
+    <div class="bn-item" id="btn-go-pf"><span class="bn-icon">💼</span><span class="bn-label">내 자산</span></div>
+    <div class="bn-item" id="btn-go-alarm"><span class="bn-icon">🔔</span><span class="bn-label">알림</span></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════
+     PAGE: MARKET (시장 수급)
+══════════════════════════════ -->
+<div class="page" id="page-market">
+  <div class="statusbar"><span class="statusbar-time">9:41</span><div class="statusbar-icons"><svg viewBox="0 0 24 24"><path d="M1 6l5 5 5-5 5 5 5-5"/></svg></div></div>
+  <div class="market-header">
+    <div class="mh-row">
+      <div class="nav-back" id="btn-back-market"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></div>
+      <span class="mh-title">오늘 시장 수급</span>
+    </div>
+    <div class="mh-sub">2026.06.09 · 코스피 기준</div>
+  </div>
+  <div class="breadcrumb">
+    <span class="bc-link" id="btn-back-market2">← 삼성전자 투자자 탭</span>
+  </div>
+  <div class="content-area">
+    <div class="section">
+      <div class="section-hd">
+        <span class="section-title">전체 수급 요약</span>
+        <span class="signal-pill signal-mixed">혼조</span>
+      </div>
+      <div class="dir-grid">
+        <div class="dir-card buy-card"><div class="dir-label buy">코스피 기관</div><div class="dir-val buy">+2,840억</div><div class="dir-sub">전일 대비 +340억</div></div>
+        <div class="dir-card sell-card"><div class="dir-label sell">코스피 외국인</div><div class="dir-val sell">−1,230억</div><div class="dir-sub">3일 연속 매도</div></div>
+        <div class="dir-card" style="background:var(--surface2);border-color:var(--border);"><div class="dir-label" style="color:var(--text2);">개인</div><div class="dir-val sell">−1,610억</div><div class="dir-sub">기관 매수 상쇄</div></div>
+        <div class="dir-card" style="background:var(--amber-light);border-color:rgba(217,119,6,0.15);"><div class="dir-label" style="color:var(--amber-text);">삼성전자 기관 비중</div><div class="dir-val" style="color:var(--amber);">58%</div><div class="dir-sub">코스피 기관 매도 중</div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-hd">
+        <span class="section-title">업종별 수급 지도</span>
+        <div class="filter-tabs" style="width:120px;margin-bottom:0;">
+          <div class="ftab on">기관</div>
+          <div class="ftab">외국인</div>
+        </div>
+      </div>
+      <div class="sector-item"><span class="sname" style="color:var(--sell-text);font-weight:600;">반도체</span><div class="strack"><div class="sfill" style="width:82%;background:var(--sell);"></div></div><span class="sval" style="color:var(--sell);">−2,437억</span></div>
+      <div class="sector-item"><span class="sname" style="color:var(--buy-text);font-weight:600;">금융</span><div class="strack"><div class="sfill" style="width:65%;background:var(--buy);"></div></div><span class="sval" style="color:var(--buy);">+1,920억</span></div>
+      <div class="sector-item"><span class="sname">자동차</span><div class="strack"><div class="sfill" style="width:40%;background:var(--buy);opacity:.7;"></div></div><span class="sval" style="color:var(--buy);">+1,180억</span></div>
+      <div class="sector-item"><span class="sname">바이오</span><div class="strack"><div class="sfill" style="width:18%;background:var(--text3);"></div></div><span class="sval" style="color:var(--text2);">±210억</span></div>
+      <div class="sector-item"><span class="sname">IT서비스</span><div class="strack"><div class="sfill" style="width:28%;background:var(--buy);opacity:.5;"></div></div><span class="sval" style="color:var(--buy);">+820억</span></div>
+    </div>
+
+    <div class="section">
+      <div class="section-hd"><span class="section-title">기관 순매수 상위</span><span class="section-note">코스피 기준</span></div>
+      <div class="filter-tabs">
+        <div class="ftab on">매수 상위</div>
+        <div class="ftab">매도 상위</div>
+        <div class="ftab">외국인</div>
+      </div>
+      <div class="rank-item">
+        <span class="rnum top">1</span>
+        <div style="flex:1;"><div class="rname">SK하이닉스</div><div class="rsector">반도체</div></div>
+        <div style="text-align:right;"><div class="rval" style="color:var(--buy);">+1,240억</div><div class="rsub">시총 대비 0.09%</div></div>
+      </div>
+      <div class="rank-item">
+        <span class="rnum top">2</span>
+        <div style="flex:1;"><div class="rname">KB금융</div><div class="rsector">금융</div></div>
+        <div style="text-align:right;"><div class="rval" style="color:var(--buy);">+890억</div><div class="rsub">시총 대비 0.12%</div></div>
+      </div>
+      <div class="rank-item">
+        <span class="rnum top">3</span>
+        <div style="flex:1;"><div class="rname">현대차</div><div class="rsector">자동차</div></div>
+        <div style="text-align:right;"><div class="rval" style="color:var(--buy);">+620억</div><div class="rsub">시총 대비 0.07%</div></div>
+      </div>
+      <span class="more-link">전체 순위 보기 →</span>
+    </div>
+
+    <div class="section">
+      <div class="section-hd"><span class="section-title">연속 수급 신호</span><span class="section-note">최근 5거래일</span></div>
+      <div class="ins-row"><div class="ins-dot" style="background:var(--sell);"></div><div class="ins-body"><div class="ins-main">외국인, 코스피 전체 5일 연속 순매도 <span class="badge badge-sell" style="margin-left:3px;">주의</span></div><div class="ins-sub">1년 기준 연속 매도 상위 15% 수준</div></div></div>
+      <div class="ins-row"><div class="ins-dot" style="background:var(--buy);"></div><div class="ins-body"><div class="ins-main">금융 섹터 기관 3일 연속 순매수 <span class="badge badge-buy" style="margin-left:3px;">주목</span></div><div class="ins-sub">반도체 매도 자금 금융으로 이동 흐름</div></div></div>
+      <div class="ins-row"><div class="ins-dot" style="background:var(--amber);"></div><div class="ins-body"><div class="ins-main">반도체 중 SK하이닉스만 역방향 매수 <span class="badge badge-amber" style="margin-left:3px;">참고</span></div><div class="ins-sub">삼성전자 매도와 상이한 흐름</div></div></div>
+    </div>
+
+    <div class="section">
+      <div class="small-notice">위 정보는 참고 목적이며 투자 판단의 근거로 단독 활용하지 마세요. 데이터 기준 당일 장중.</div>
+      <div class="btn-row">
+        <button class="ghost-btn" id="btn-go-discover">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          종목 발굴
+        </button>
+        <button class="ghost-btn" id="btn-go-feed">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          수급 피드
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="bottom-nav">
+    <div class="bn-item" id="btn-home-market"><span class="bn-icon">🏠</span><span class="bn-label">홈</span></div>
+    <div class="bn-item"><span class="bn-icon">⭐</span><span class="bn-label">관심</span></div>
+    <div class="bn-item"><span class="bn-icon" style="color:var(--lime-dark);">📊</span><span class="bn-label on">주식</span></div>
+    <div class="bn-item" id="btn-go-pf2"><span class="bn-icon">💼</span><span class="bn-label">내 자산</span></div>
+    <div class="bn-item" id="btn-go-alarm2"><span class="bn-icon">🔔</span><span class="bn-label">알림</span></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════
+     PAGE: ALARM (수급 알림)
+══════════════════════════════ -->
+<div class="page" id="page-alarm">
+  <div class="statusbar"><span class="statusbar-time">9:41</span><div class="statusbar-icons"></div></div>
+  <div class="market-header">
+    <div class="mh-row">
+      <div class="nav-back" id="btn-back-alarm"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></div>
+      <span class="mh-title">수급 알림</span>
+    </div>
+    <div class="mh-sub">오늘 3건 · 보유·관심 종목</div>
+  </div>
+  <div class="content-area">
+    <div class="section">
+      <div class="section-hd"><span class="section-title">이례적 수급 감지</span></div>
+      <div class="alarm-item">
+        <div class="alarm-icon" style="background:var(--buy-light);">
+          <svg style="stroke:var(--buy-text);" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        </div>
+        <div class="alarm-body">
+          <div class="alarm-title">삼성전자 — 기관 매도 역대 상위 4%</div>
+          <div class="alarm-desc">1년 252거래일 중 11번째 수준. 시총 대비로도 이례적 규모입니다.</div>
+          <div class="alarm-meta">
+            <span class="alarm-time">오늘 15:32</span>
+            <span class="badge badge-lime">보유종목</span>
+            <span class="badge badge-sell">이례적</span>
+          </div>
+        </div>
+      </div>
+      <div class="alarm-item">
+        <div class="alarm-icon" style="background:var(--sell-light);">
+          <svg style="stroke:var(--sell-text);" viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        </div>
+        <div class="alarm-body">
+          <div class="alarm-title">SK하이닉스 — 외국인 15일 매도 후 첫 전환</div>
+          <div class="alarm-desc">오늘 외국인 +87만주 순매수. 추세 전환 여부는 추가 확인이 필요합니다.</div>
+          <div class="alarm-meta">
+            <span class="alarm-time">오늘 15:41</span>
+            <span class="badge badge-amber">관심종목</span>
+            <span class="badge badge-lime">전환 감지</span>
+          </div>
+        </div>
+      </div>
+      <div class="alarm-item">
+        <div class="alarm-icon" style="background:var(--green-light);">
+          <svg style="stroke:var(--green-text);" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        </div>
+        <div class="alarm-body">
+          <div class="alarm-title">현대차 — 기관 5일 연속 순매수 진행 중</div>
+          <div class="alarm-desc">코스피 기관 매수 상위 8위. 주가 변동 ±2% 이내 조용한 상태입니다.</div>
+          <div class="alarm-meta">
+            <span class="alarm-time">어제 15:20</span>
+            <span class="badge badge-amber">관심종목</span>
+            <span class="badge badge-green">연속 매수</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="small-notice">알림 기준: 역사적 상위 5% 이상 수급 발생 시, N일 연속 후 첫 전환 시. 투자 판단 참고 목적으로만 활용하세요.</div>
+      <div style="margin-top:12px;font-size:12px;color:var(--lime-dark);font-weight:500;cursor:pointer;">알림 설정 변경 →</div>
+    </div>
+  </div>
+  <div class="bottom-nav">
+    <div class="bn-item" id="btn-home-alarm"><span class="bn-icon">🏠</span><span class="bn-label">홈</span></div>
+    <div class="bn-item"><span class="bn-icon">⭐</span><span class="bn-label">관심</span></div>
+    <div class="bn-item"><span class="bn-icon">📊</span><span class="bn-label">주식</span></div>
+    <div class="bn-item"><span class="bn-icon">💼</span><span class="bn-label">내 자산</span></div>
+    <div class="bn-item"><span class="bn-icon" style="color:var(--lime-dark);">🔔</span><span class="bn-label on">알림</span></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════
+     PAGE: PORTFOLIO (수급 스캔)
+══════════════════════════════ -->
+<div class="page" id="page-pf">
+  <div class="statusbar"><span class="statusbar-time">9:41</span><div class="statusbar-icons"></div></div>
+  <div class="market-header">
+    <div class="mh-row">
+      <div class="nav-back" id="btn-back-pf"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></div>
+      <span class="mh-title">보유 종목 수급 진단</span>
+    </div>
+    <div class="mh-sub">2026.06.09 장중</div>
+  </div>
+  <div class="content-area">
+    <div class="section">
+      <div class="section-hd"><span class="section-title">수급 위험 요약</span></div>
+      <div class="notice" style="background:var(--buy-light);margin-bottom:12px;">
+        <svg style="stroke:var(--buy-text);margin-top:1px;" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <span style="color:var(--buy-text);font-size:12px;">보유 종목 5개 중 <strong>2개</strong>에서 이례적 수급이 감지됩니다.</span>
+      </div>
+      <div class="cum-grid">
+        <div class="cum-card"><div class="cum-label">이례적 수급</div><div class="cum-val" style="color:var(--buy);">2개</div><div class="cum-sub">주의 필요</div></div>
+        <div class="cum-card"><div class="cum-label">수급 안정</div><div class="cum-val" style="color:var(--text2);">3개</div><div class="cum-sub">정상 범위</div></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-hd"><span class="section-title">종목별 수급 현황</span></div>
+      <div class="pf-item">
+        <div class="pf-left"><div class="pf-name">삼성전자 <span class="badge badge-sell" style="font-size:9px;">이례적</span></div><div class="pf-desc">기관 매도 · 역대 상위 4% · 1년 중 11번째</div></div>
+        <div class="pf-right"><div class="pf-val" style="color:var(--sell);">−1,655억</div><div class="pf-sub">기관 당일</div></div>
+      </div>
+      <div class="pf-item">
+        <div class="pf-left"><div class="pf-name">현대차 <span class="badge badge-green" style="font-size:9px;">연속매수</span></div><div class="pf-desc">기관 5일 연속 순매수 · 조용한 상승 패턴</div></div>
+        <div class="pf-right"><div class="pf-val" style="color:var(--buy);">+620억</div><div class="pf-sub">기관 당일</div></div>
+      </div>
+      <div class="pf-item">
+        <div class="pf-left"><div class="pf-name">카카오</div><div class="pf-desc">기관·외국인 수급 보통 수준</div></div>
+        <div class="pf-right"><div class="pf-val" style="color:var(--text2);">±미미</div><div class="pf-sub">기관 당일</div></div>
+      </div>
+      <div class="pf-item">
+        <div class="pf-left"><div class="pf-name">POSCO홀딩스</div><div class="pf-desc">외국인 소폭 매도 · 역사적 하위 수준</div></div>
+        <div class="pf-right"><div class="pf-val" style="color:var(--sell);">−89억</div><div class="pf-sub">외국인 당일</div></div>
+      </div>
+      <div class="pf-item">
+        <div class="pf-left"><div class="pf-name">KB금융</div><div class="pf-desc">기관 매수 유입 · 금융 섹터 전반 강세</div></div>
+        <div class="pf-right"><div class="pf-val" style="color:var(--buy);">+890억</div><div class="pf-sub">기관 당일</div></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="small-notice">수급 정보는 투자 판단의 참고 자료이며 매매를 권유하지 않습니다.</div>
+    </div>
+  </div>
+  <div class="bottom-nav">
+    <div class="bn-item" id="btn-home-pf"><span class="bn-icon">🏠</span><span class="bn-label">홈</span></div>
+    <div class="bn-item"><span class="bn-icon">⭐</span><span class="bn-label">관심</span></div>
+    <div class="bn-item"><span class="bn-icon">📊</span><span class="bn-label">주식</span></div>
+    <div class="bn-item"><span class="bn-icon" style="color:var(--lime-dark);">💼</span><span class="bn-label on">내 자산</span></div>
+    <div class="bn-item"><span class="bn-icon">🔔</span><span class="bn-label">알림</span></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════
+     PAGE: DISCOVER (종목 발굴)
+══════════════════════════════ -->
+<div class="page" id="page-discover">
+  <div class="statusbar"><span class="statusbar-time">9:41</span><div class="statusbar-icons"></div></div>
+  <div class="market-header">
+    <div class="mh-row">
+      <div class="nav-back" id="btn-back-discover"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></div>
+      <span class="mh-title">수급 종목 발굴</span>
+    </div>
+    <div class="mh-sub">AI 참고용 · 투자 권유 아님</div>
+  </div>
+  <div class="content-area">
+    <div class="section">
+      <div style="display:flex;gap:5px;margin-bottom:10px;overflow-x:auto;scrollbar-width:none;">
+        <button class="ptab on">기관 조용한 매수</button>
+        <button class="ptab">수급·주가 괴리</button>
+        <button class="ptab">외국인 전환</button>
+      </div>
+      <div class="notice" style="background:var(--surface2);margin-bottom:12px;border:1px solid var(--border);">
+        <svg style="stroke:var(--text3);" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span style="color:var(--text2);font-size:11px;">기관 3일 이상 연속 순매수 + 주가 등락 ±3% 이내 종목. 포지션 축적 패턴 참고용이며 매수 추천이 아닙니다.</span>
+      </div>
+      <div class="disc-item">
+        <div class="disc-top">
+          <div><div class="disc-name">SK하이닉스</div><div class="disc-sector">반도체 · 코스피</div></div>
+          <div><div class="disc-val" style="color:var(--buy);">+1,240억</div><div class="disc-sub">기관 3일 누적</div></div>
+        </div>
+        <div class="disc-tags"><span class="badge badge-green">7일 연속</span><span class="badge badge-gray">주가 +1.2%</span><span class="badge badge-lime">코스피 1위</span></div>
+      </div>
+      <div class="disc-item">
+        <div class="disc-top">
+          <div><div class="disc-name">KB금융</div><div class="disc-sector">금융 · 코스피</div></div>
+          <div><div class="disc-val" style="color:var(--buy);">+890억</div><div class="disc-sub">기관 3일 누적</div></div>
+        </div>
+        <div class="disc-tags"><span class="badge badge-green">5일 연속</span><span class="badge badge-gray">주가 +0.8%</span><span class="badge badge-amber">코스피 2위</span></div>
+      </div>
+      <div class="disc-item">
+        <div class="disc-top">
+          <div><div class="disc-name">LG에너지솔루션</div><div class="disc-sector">이차전지 · 코스피</div></div>
+          <div><div class="disc-val" style="color:var(--buy);">+540억</div><div class="disc-sub">기관 3일 누적</div></div>
+        </div>
+        <div class="disc-tags"><span class="badge badge-green">4일 연속</span><span class="badge badge-gray">주가 −0.5%</span><span class="badge badge-amber">코스피 3위</span></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="small-notice">수급 조건 충족 결과이며 매수 추천이 아닙니다. 종목별 상세 수급은 종목 탭에서 확인하세요.</div>
+    </div>
+  </div>
+  <div class="bottom-nav">
+    <div class="bn-item" id="btn-home-discover"><span class="bn-icon">🏠</span><span class="bn-label">홈</span></div>
+    <div class="bn-item"><span class="bn-icon">⭐</span><span class="bn-label">관심</span></div>
+    <div class="bn-item"><span class="bn-icon" style="color:var(--lime-dark);">📊</span><span class="bn-label on">주식</span></div>
+    <div class="bn-item"><span class="bn-icon">💼</span><span class="bn-label">내 자산</span></div>
+    <div class="bn-item"><span class="bn-icon">🔔</span><span class="bn-label">알림</span></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════
+     PAGE: FEED (수급 피드)
+══════════════════════════════ -->
+<div class="page" id="page-feed">
+  <div class="statusbar"><span class="statusbar-time">9:41</span><div class="statusbar-icons"></div></div>
+  <div class="market-header">
+    <div class="mh-row">
+      <div class="nav-back" id="btn-back-feed"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></div>
+      <span class="mh-title">수급 피드</span>
+    </div>
+    <div class="mh-sub">오늘의 수급 이슈 · 장 마감</div>
+  </div>
+  <div class="content-area">
+    <div class="section">
+      <div class="section-hd"><span class="section-title">오늘의 수급 이슈</span><span class="section-note">2026.06.09 15:45</span></div>
+      <div class="feed-card">
+        <div class="feed-top"><div class="feed-title">반도체 기관 매도, 삼성전자에만 68% 집중</div><span class="feed-time">15:45</span></div>
+        <div class="feed-body">코스피 기관 반도체 매도 중 삼성전자 비중이 68%로, SK하이닉스와 분리된 종목 특이 수급으로 해석됩니다.</div>
+        <div class="feed-footer"><span class="badge badge-lime">반도체</span><span class="badge badge-sell">이례적 강도</span></div>
+      </div>
+      <div class="feed-card">
+        <div class="feed-top"><div class="feed-title">금융 섹터 기관 3일 연속 순매수 유입</div><span class="feed-time">15:43</span></div>
+        <div class="feed-body">KB금융·신한지주 중심으로 기관 매수가 이어지고 있습니다. 반도체 매도 자금 일부가 금융으로 이동하는 흐름입니다.</div>
+        <div class="feed-footer"><span class="badge badge-green">금융</span><span class="badge badge-green">연속 매수</span></div>
+      </div>
+      <div class="feed-card">
+        <div class="feed-top"><div class="feed-title">외국인, 코스피 5일 연속 순매도 지속</div><span class="feed-time">15:40</span></div>
+        <div class="feed-body">오늘까지 5거래일 연속 순매도로 1년 기준 상위 15% 수준입니다. 시장 전반의 흐름에 주의가 필요합니다.</div>
+        <div class="feed-footer"><span class="badge badge-amber">외국인</span><span class="badge badge-lime">시장 전반</span></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-hd"><span class="section-title">주간 수급 리포트</span><span class="section-note">06.02 ~ 06.06</span></div>
+      <div class="report-box">
+        <div class="report-row"><span class="rr-left">기관 최다 매수 종목</span><span class="rr-right" style="color:var(--buy);">SK하이닉스 +3,240억</span></div>
+        <div class="report-row"><span class="rr-left">외국인 최다 매도 종목</span><span class="rr-right" style="color:var(--sell);">삼성전자 −4,820억</span></div>
+        <div class="report-row"><span class="rr-left">기관 집중 매수 섹터</span><span class="rr-right" style="color:var(--buy);">금융 · 자동차</span></div>
+        <div class="report-row"><span class="rr-left">외국인 집중 매도 섹터</span><span class="rr-right" style="color:var(--sell);">반도체 · 소재</span></div>
+        <div class="report-row"><span class="rr-left">이주의 수급 이슈</span><span class="rr-right" style="color:var(--text2);">기관·외국인 방향 엇갈림</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="bottom-nav">
+    <div class="bn-item" id="btn-home-feed"><span class="bn-icon">🏠</span><span class="bn-label">홈</span></div>
+    <div class="bn-item"><span class="bn-icon">⭐</span><span class="bn-label">관심</span></div>
+    <div class="bn-item"><span class="bn-icon" style="color:var(--lime-dark);">📊</span><span class="bn-label on">주식</span></div>
+    <div class="bn-item"><span class="bn-icon">💼</span><span class="bn-label">내 자산</span></div>
+    <div class="bn-item"><span class="bn-icon">🔔</span><span class="bn-label">알림</span></div>
+  </div>
+</div>
+
+</div><!-- /device-frame -->
+
+<script>
+const pages = {
+  stock: document.getElementById('page-stock'),
+  market: document.getElementById('page-market'),
+  alarm: document.getElementById('page-alarm'),
+  pf: document.getElementById('page-pf'),
+  discover: document.getElementById('page-discover'),
+  feed: document.getElementById('page-feed')
+};
+function go(id) {
+  Object.values(pages).forEach(p => p.classList.remove('active'));
+  pages[id].classList.add('active');
+  document.querySelector('.device-frame').scrollTop = 0;
+  const ca = pages[id].querySelector('.content-area');
+  if (ca) ca.scrollTop = 0;
+  if (id === 'stock') { setTimeout(function(){ if(window._s2draw) window._s2draw(); }, 50); }
+}
+document.getElementById('btn-go-market').addEventListener('click', () => go('market'));
+document.getElementById('btn-back-market').addEventListener('click', () => go('stock'));
+document.getElementById('btn-back-market2').addEventListener('click', () => go('stock'));
+document.getElementById('btn-home-market').addEventListener('click', () => go('stock'));
+document.getElementById('btn-go-alarm').addEventListener('click', () => go('alarm'));
+document.getElementById('btn-go-alarm2').addEventListener('click', () => go('alarm'));
+document.getElementById('btn-back-alarm').addEventListener('click', () => go('stock'));
+document.getElementById('btn-home-alarm').addEventListener('click', () => go('stock'));
+document.getElementById('btn-go-pf').addEventListener('click', () => go('pf'));
+document.getElementById('btn-go-pf2').addEventListener('click', () => go('pf'));
+document.getElementById('btn-back-pf').addEventListener('click', () => go('stock'));
+document.getElementById('btn-home-pf').addEventListener('click', () => go('stock'));
+document.getElementById('btn-go-discover').addEventListener('click', () => go('discover'));
+document.getElementById('btn-back-discover').addEventListener('click', () => go('market'));
+document.getElementById('btn-home-discover').addEventListener('click', () => go('stock'));
+document.getElementById('btn-go-feed').addEventListener('click', () => go('feed'));
+document.getElementById('btn-back-feed').addEventListener('click', () => go('market'));
+document.getElementById('btn-home-feed').addEventListener('click', () => go('stock'));
+
+
+/* ── STEP 2 차트 (검증 완료) ── */
+(function(){
+  var W=340,CL=16,CW=324,CT=6,CB=80,MID=43,XY=94;
+  var CNT={'1W':5,'1M':22,'3M':66,'6M':130};
+  var XLBL={
+    '1W':[[CL,'월'],[CL+CW*0.25,'화'],[CL+CW*0.5,'수'],[CL+CW*0.75,'목'],[CL+CW*0.95,'금']],
+    '1M':[[CL,'1주'],[CL+CW*0.33,'2주'],[CL+CW*0.66,'3주'],[CL+CW*0.92,'4주']],
+    '3M':[[CL,'3월'],[CL+CW*0.33,'4월'],[CL+CW*0.66,'5월'],[CL+CW*0.92,'6월']],
+    '6M':[[CL,'1월'],[CL+CW*0.2,'2월'],[CL+CW*0.4,'3월'],[CL+CW*0.6,'4월'],[CL+CW*0.8,'5월'],[CL+CW*0.95,'6월']]
+  };
+  var ENT={inst:{name:'기관',col:'#1A5FD4'},fore:{name:'외국인',col:'var(--amber)'},ind:{name:'개인',col:'var(--buy)'}};
+  var DETS=[{k:'금융투자',c:'#1A5FD4'},{k:'투신',c:'#D97706'},{k:'보험',c:'#E83030'},{k:'연기금',c:'#1D9E6B'},{k:'사모펀드',c:'#6B46C8'}];
+  var st={per:'3M',type:'daily',ent:'inst',detOpen:false,sub:'금융투자'};
+
+  function lcg(seed,n){var a=[],s=(seed%2147483647+2147483647)%2147483647;for(var i=0;i<n;i++){s=(s*16807)%2147483647;a.push(s/2147483647);}return a;}
+  function makeSeed(k,p){var h=5381,str=k+'|'+p;for(var i=0;i<str.length;i++)h=((h<<5)+h+str.charCodeAt(i))&0x7fffffff;return h||1;}
+  function getBars(k,p){return lcg(makeSeed(k,p),CNT[p]).map(function(v){return{up:v>0.48,h:Math.max(5,Math.round(v*28))};});}
+  function getCumul(k,p){var r=lcg(makeSeed(k,p),CNT[p]),v=0,out=[];for(var i=0;i<r.length;i++){v+=r[i]>0.48?Math.round(r[i]*16):-Math.round((1-r[i])*13);out.push(v);}return out;}
+  function bpos(i,n){var sp=CW/n,bw=Math.min(sp*0.7,11);return{x:CL+i*sp+(sp-bw)/2,w:bw};}
+  function mkXlbl(p){return(XLBL[p]||[]).map(function(l){return'<text x="'+l[0].toFixed(1)+'" y="'+XY+'" font-size="8" fill="var(--text3)">'+l[1]+'</text>';}).join('');}
+
+  function setMeta(col,name,lv){
+    var dot=document.getElementById('s2-dot'),nm=document.getElementById('s2-name'),el=document.getElementById('s2-cumval');
+    if(dot)dot.style.background=col;if(nm)nm.textContent=name;
+    if(!el)return;
+    if(lv===null){el.style.display='none';return;}
+    el.textContent=(lv>=0?'+':'')+lv+'억';
+    el.style.color=lv>=0?'var(--buy)':'#1A5FD4';
+    el.style.background=lv>=0?'var(--buy-light)':'var(--sell-light)';
+    el.style.display='inline-block';
+  }
+
+  function draw(){
+    var svg=document.getElementById('s2-svg');if(!svg)return;
+    svg.setAttribute('viewBox','0 0 340 100');
+    var key,col,name;
+    if(st.detOpen){var d=DETS.filter(function(x){return x.k===st.sub;})[0]||DETS[0];key=d.k;col=d.c;name=d.k;}
+    else{var e=ENT[st.ent];key=st.ent;col=e.col;name=e.name;}
+    var p=st.per,n=CNT[p],h='';
+
+    if(st.type==='daily'){
+      setMeta(col,name,null);
+      h+='<line x1="'+CL+'" y1="'+MID+'" x2="'+W+'" y2="'+MID+'" stroke="var(--text3)" stroke-width="0.8" stroke-dasharray="3,2"/>';
+      var bars=getBars(key,p);
+      for(var i=0;i<bars.length;i++){
+        var b=bars[i],pos=bpos(i,n),ry=b.up?MID-b.h:MID;
+        h+='<rect x="'+pos.x.toFixed(2)+'" y="'+ry+'" width="'+pos.w.toFixed(2)+'" height="'+b.h+'" fill="'+(b.up?'var(--buy)':'#1A5FD4')+'" rx="1.5"/>';
+      }
+      var leg=document.getElementById('s2-legend');
+      if(leg)leg.innerHTML='<div style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);"><div style="width:8px;height:8px;border-radius:50%;background:var(--buy);"></div>순매수</div><div style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);"><div style="width:8px;height:8px;border-radius:50%;background:#1A5FD4;"></div>순매도</div>';
+    } else {
+      var vals=getCumul(key,p),mn=Math.min.apply(null,vals),mx=Math.max.apply(null,vals);
+      var dmin=Math.min(mn,0),dmax=Math.max(mx,0),rng=(dmax-dmin)||1;
+      var PAD=8,avail=CB-CT-PAD*2;
+      var cy=function(v){return CB-PAD-(v-dmin)/rng*avail;};
+      var zy=cy(0);
+      h+='<text x="2" y="'+(zy+3.5).toFixed(1)+'" font-size="8" fill="var(--text3)">0</text>';
+      h+='<line x1="'+CL+'" y1="'+zy.toFixed(1)+'" x2="'+W+'" y2="'+zy.toFixed(1)+'" stroke="var(--text3)" stroke-width="0.8" stroke-dasharray="3,2"/>';
+      var pts=vals.map(function(v,i){var pos=bpos(i,n);return(pos.x+pos.w/2).toFixed(1)+','+cy(v).toFixed(1);});
+      h+='<polyline points="'+pts.join(' ')+'" fill="none" stroke="'+col+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
+      var lp=bpos(n-1,n),lv=vals[n-1];
+      h+='<circle cx="'+(lp.x+lp.w/2).toFixed(1)+'" cy="'+cy(lv).toFixed(1)+'" r="3.5" fill="'+col+'"/>';
+      setMeta(col,name,lv);
+      var leg=document.getElementById('s2-legend');
+      if(leg)leg.innerHTML='<div style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);"><div style="width:14px;height:2.5px;border-radius:2px;background:'+col+';"></div>'+name+' '+p+' 누적</div>';
+    }
+    h+=mkXlbl(p);
+    svg.innerHTML=h;
+  }
+
+  function buildSubs(){
+    var wrap=document.getElementById('s2-sub-row');if(!wrap)return;wrap.innerHTML='';
+    DETS.forEach(function(d){
+      var btn=document.createElement('button');
+      btn.style.cssText='font-size:11px;padding:5px 12px;border-radius:6px;border:1.5px solid rgba(0,0,0,0.15);background:#F0F1EC;color:#484D42;cursor:pointer;font-weight:500;';
+      btn.textContent=d.k;
+      if(d.k===st.sub){btn.style.background=d.c;btn.style.color='#fff';btn.style.borderColor=d.c;}
+      btn.onclick=function(){
+        st.sub=d.k;
+        wrap.querySelectorAll('button').forEach(function(b){b.style.cssText='font-size:11px;padding:5px 12px;border-radius:6px;border:1.5px solid rgba(0,0,0,0.15);background:#F0F1EC;color:#484D42;cursor:pointer;font-weight:500;';});
+        btn.style.background=d.c;btn.style.color='#fff';btn.style.borderColor=d.c;
+        draw();
+      };
+      wrap.appendChild(btn);
+    });
+  }
+
+  var ptEl=document.getElementById('s2-per-tabs');
+  if(ptEl)ptEl.onclick=function(e){var b=e.target.closest('[data-p]');if(!b)return;st.per=b.dataset.p;document.querySelectorAll('#s2-per-tabs [data-p]').forEach(function(x){x.classList.toggle('on',x.dataset.p===st.per);});draw();};
+
+  var ttEl=document.getElementById('s2-type-tabs');
+  if(ttEl)ttEl.onclick=function(e){
+    var b=e.target.closest('[data-t]');if(!b)return;st.type=b.dataset.t;
+    var daily=document.getElementById('s2-tt-daily'),cumul=document.getElementById('s2-tt-cumul');
+    if(daily)daily.style.cssText=st.type==='daily'?'flex:1;text-align:center;font-size:11px;font-weight:600;padding:5px;border-radius:9px;cursor:pointer;background:#1A5FD4;color:#fff;':'flex:1;text-align:center;font-size:11px;font-weight:500;padding:5px;border-radius:9px;cursor:pointer;background:#F0F1EC;color:#484D42;';
+    if(cumul)cumul.style.cssText=st.type==='cumul'?'flex:1;text-align:center;font-size:11px;font-weight:600;padding:5px;border-radius:9px;cursor:pointer;background:#1A5FD4;color:#fff;':'flex:1;text-align:center;font-size:11px;font-weight:500;padding:5px;border-radius:9px;cursor:pointer;background:#F0F1EC;color:#484D42;';
+    draw();
+  };
+
+  var etEl=document.getElementById('s2-ent-tabs');
+  if(etEl)etEl.onclick=function(e){
+    var b=e.target.closest('[data-e]');if(!b)return;
+    st.ent=b.dataset.e;st.detOpen=false;
+    document.querySelectorAll('#s2-ent-tabs [data-e]').forEach(function(x){x.classList.remove('on');});
+    b.classList.add('on');
+    var db=document.getElementById('s2-det-btn');
+    if(db){db.style.cssText='font-size:11px;padding:5px 12px;border-radius:6px;border:1.5px dashed rgba(0,0,0,0.20);background:#F0F1EC;color:#484D42;cursor:pointer;font-weight:500;';db.textContent='세부 ↓';}
+    var sp=document.getElementById('s2-sub-panel');if(sp)sp.style.display='none';
+    draw();
+  };
+
+  var db=document.getElementById('s2-det-btn');
+  if(db)db.onclick=function(){
+    st.detOpen=!st.detOpen;
+    var sp=document.getElementById('s2-sub-panel');
+    if(st.detOpen){
+      document.querySelectorAll('#s2-ent-tabs [data-e]').forEach(function(x){x.classList.remove('on');});
+      db.style.cssText='font-size:11px;padding:5px 12px;border-radius:6px;border:1.5px solid #8DB800;background:#F0FAC8;color:#4A6800;cursor:pointer;font-weight:600;';
+      db.textContent='세부 ↑';
+      if(sp)sp.style.display='block';
+      buildSubs();
+    } else {
+      db.style.cssText='font-size:11px;padding:5px 12px;border-radius:6px;border:1.5px dashed rgba(0,0,0,0.20);background:#F0F1EC;color:#484D42;cursor:pointer;font-weight:500;';
+      db.textContent='세부 ↓';
+      if(sp)sp.style.display='none';
+      st.ent='inst';
+      var inst=document.querySelector('#s2-ent-tabs [data-e="inst"]');if(inst)inst.classList.add('on');
+    }
+    draw();
+  };
+
+  window._s2draw = draw;
+  /* page-stock이 이미 active이므로 100ms 후 실행 보장 */
+  setTimeout(draw, 100);
+})();
+
+/* ── STEP 3 수급 강도 분석 ── */
+(function(){
+var S3DATA={
+  inst:{name:'기관',mainDir:'sell',col:'#1A5FD4',
+    sell:{val:'−1,655억',abs:{rank:1,total:900,pct:99.9,amount:'−1,655억',note:'상위 0.1%',level:'매우 강함',comp:'코스피 기관 순매도 1위'},rel:{rank:41,total:900,pct:95.4,amount:'시총 대비 0.07%',note:'상위 4.6%',level:'강함',comp:'시총 규모 감안 41위'},time:{rank:11,total:252,pct:95.6,amount:'252일 중 11번째',note:'상위 4.4%',level:'이례적',comp:'1년 기준 역대급 수준'}},
+    buy:{val:null,abs:{rank:null,total:900,pct:0,amount:null,note:null,level:null,comp:null},rel:{rank:null,total:900,pct:0,amount:null,note:null,level:null,comp:null},time:{rank:null,total:252,pct:0,amount:null,note:null,level:null,comp:null}},
+    summary:'오늘 기관은 절대·상대·시간 강도 모두 <strong>상위 5% 이내</strong>의 강한 순매도입니다.'},
+  fore:{name:'외국인',mainDir:'sell',col:'#D97706',
+    sell:{val:'−444억',abs:{rank:61,total:900,pct:93.2,amount:'−444억',note:'상위 6.8%',level:'강함',comp:'코스피 외국인 순매도 61위'},rel:{rank:88,total:900,pct:90.2,amount:'시총 대비 0.02%',note:'상위 9.8%',level:'강함',comp:'시총 규모 감안 88위'},time:{rank:96,total:252,pct:61.9,amount:'252일 중 96번째',note:'상위 38.1%',level:'보통',comp:'1년 기준 보통 수준'}},
+    buy:{val:null,abs:{rank:null,total:900,pct:0,amount:null,note:null,level:null,comp:null},rel:{rank:null,total:900,pct:0,amount:null,note:null,level:null,comp:null},time:{rank:null,total:252,pct:0,amount:null,note:null,level:null,comp:null}},
+    summary:'절대·상대 강도는 <strong>상위 10% 이내</strong>이나 시간 강도는 보통 수준입니다.'},
+  ind:{name:'개인',mainDir:'buy',col:'#E83030',
+    buy:{val:'+1,966억',abs:{rank:12,total:900,pct:98.7,amount:'+1,966억',note:'상위 1.3%',level:'매우 강함',comp:'코스피 개인 순매수 12위'},rel:{rank:18,total:900,pct:98.0,amount:'시총 대비 0.09%',note:'상위 2.0%',level:'매우 강함',comp:'시총 규모 감안 18위'},time:{rank:55,total:252,pct:78.2,amount:'252일 중 55번째',note:'상위 21.8%',level:'강함',comp:'1년 기준 강한 수준'}},
+    sell:{val:null,abs:{rank:null,total:900,pct:0,amount:null,note:null,level:null,comp:null},rel:{rank:null,total:900,pct:0,amount:null,note:null,level:null,comp:null},time:{rank:null,total:252,pct:0,amount:null,note:null,level:null,comp:null}},
+    summary:'절대·상대 강도 모두 <strong>상위 2% 이내</strong>의 강한 순매수입니다.'}
+};
+var S3DETS=[
+  {k:'금융투자',c:'#1A5FD4',mainDir:'sell',col:'#1A5FD4',sell:{val:'−408억',abs:{rank:11,total:900,pct:98.8,amount:'−408억',note:'상위 1.2%',level:'매우 강함',comp:'코스피 기관 순매도 11위'},rel:{rank:22,total:900,pct:97.6,amount:'시총 대비 0.018%',note:'상위 2.4%',level:'매우 강함',comp:'시총 규모 감안 22위'},time:{rank:8,total:252,pct:96.8,amount:'252일 중 8번째',note:'상위 3.2%',level:'이례적',comp:'1년 기준 역대급'}},buy:{val:null,abs:{rank:null,total:900,pct:0,amount:null,note:null,level:null,comp:null},rel:{rank:null,total:900,pct:0,amount:null,note:null,level:null,comp:null},time:{rank:null,total:252,pct:0,amount:null,note:null,level:null,comp:null}},summary:'절대·상대·시간 강도 모두 <strong>상위 3% 이내</strong>의 이례적 순매도입니다.'},
+  {k:'투신',c:'#D97706',mainDir:'sell',col:'#D97706',sell:{val:'−91억',abs:{rank:38,total:900,pct:95.8,amount:'−91억',note:'상위 4.2%',level:'강함',comp:'코스피 기관 순매도 38위'},rel:{rank:55,total:900,pct:93.9,amount:'시총 대비 0.004%',note:'상위 6.1%',level:'강함',comp:'시총 규모 감안 55위'},time:{rank:44,total:252,pct:82.5,amount:'252일 중 44번째',note:'상위 17.5%',level:'강함',comp:'1년 기준 강한 수준'}},buy:{val:null,abs:{rank:null,total:900,pct:0,amount:null,note:null,level:null,comp:null},rel:{rank:null,total:900,pct:0,amount:null,note:null,level:null,comp:null},time:{rank:null,total:252,pct:0,amount:null,note:null,level:null,comp:null}},summary:'절대 강도 <strong>상위 4%</strong>로 강한 순매도입니다.'},
+  {k:'보험',c:'#E83030',mainDir:'sell',col:'#E83030',sell:{val:'−58억',abs:{rank:70,total:900,pct:92.2,amount:'−58억',note:'상위 7.8%',level:'강함',comp:'코스피 기관 순매도 70위'},rel:{rank:80,total:900,pct:91.1,amount:'시총 대비 0.003%',note:'상위 8.9%',level:'강함',comp:'시총 규모 감안 80위'},time:{rank:60,total:252,pct:76.2,amount:'252일 중 60번째',note:'상위 23.8%',level:'강함',comp:'1년 기준 강한 수준'}},buy:{val:null,abs:{rank:null,total:900,pct:0,amount:null,note:null,level:null,comp:null},rel:{rank:null,total:900,pct:0,amount:null,note:null,level:null,comp:null},time:{rank:null,total:252,pct:0,amount:null,note:null,level:null,comp:null}},summary:'절대·상대 강도 <strong>상위 9%</strong> 수준입니다.'},
+  {k:'연기금',c:'#1D9E6B',mainDir:'buy',col:'#1D9E6B',buy:{val:'+12억',abs:{rank:200,total:900,pct:77.8,amount:'+12억',note:'상위 22.2%',level:'보통',comp:'코스피 기관 순매수 200위'},rel:{rank:220,total:900,pct:75.6,amount:'시총 대비 0.001%',note:'상위 24.4%',level:'보통',comp:'시총 규모 감안 220위'},time:{rank:100,total:252,pct:60.3,amount:'252일 중 100번째',note:'상위 39.7%',level:'보통',comp:'1년 기준 보통 수준'}},sell:{val:null,abs:{rank:null,total:900,pct:0,amount:null,note:null,level:null,comp:null},rel:{rank:null,total:900,pct:0,amount:null,note:null,level:null,comp:null},time:{rank:null,total:252,pct:0,amount:null,note:null,level:null,comp:null}},summary:'기관 중 유일한 <strong>순매수</strong> — 소폭 매수 수준입니다.'},
+  {k:'사모펀드',c:'#6B46C8',mainDir:'sell',col:'#6B46C8',sell:{val:'−31억',abs:{rank:65,total:900,pct:92.8,amount:'−31억',note:'상위 7.2%',level:'강함',comp:'코스피 기관 순매도 65위'},rel:{rank:72,total:900,pct:92.0,amount:'시총 대비 0.001%',note:'상위 8.0%',level:'강함',comp:'시총 규모 감안 72위'},time:{rank:70,total:252,pct:72.2,amount:'252일 중 70번째',note:'상위 27.8%',level:'강함',comp:'1년 기준 강한 수준'}},buy:{val:null,abs:{rank:null,total:900,pct:0,amount:null,note:null,level:null,comp:null},rel:{rank:null,total:900,pct:0,amount:null,note:null,level:null,comp:null},time:{rank:null,total:252,pct:0,amount:null,note:null,level:null,comp:null}},summary:'절대·상대 강도 <strong>상위 8%</strong> 수준입니다.'}
+];
+var S3TYPES=[
+  {key:'abs', label:'절대 강도', sub:'코스피 전체 순매수금액 기준'},
+  {key:'rel', label:'상대 강도', sub:'시총 대비 순매수비율 기준'},
+  {key:'time',label:'시간 강도', sub:'1년 중 오늘 수준 발생 빈도'}
+];
+var s3st={ent:'inst',detOpen:false,sub:'금융투자'};
+
+function s3LevelStyle(lv){
+  if(!lv) return 'background:var(--surface2);color:var(--text3);';
+  if(lv==='이례적')   return 'background:var(--sell-light);color:var(--sell-text);';
+  if(lv==='매우 강함') return 'background:var(--sell-light);color:#1A5FD4;';
+  if(lv==='강함')     return 'background:var(--green-light);color:var(--green-text);';
+  if(lv==='보통')     return 'background:var(--amber-light);color:var(--amber-text);';
+  return 'background:var(--surface2);color:var(--text3);';
+}
+
+function s3GetD(){
+  if(s3st.detOpen) return S3DETS.filter(function(x){return x.k===s3st.sub;})[0]||S3DETS[0];
+  return S3DATA[s3st.ent];
+}
+
+function s3Radar(pcts, activeColor, gridCol, axisCol, bgFill){
+  var cx=55, cy=55, Rm=38;
+  function vtx(i,r){var a=-Math.PI/2+i*(2*Math.PI/3);return{x:cx+r*Math.cos(a),y:cy+r*Math.sin(a)};}
+  var h='';
+  /* 배경 삼각형 */
+  var outerPts=[0,1,2].map(function(i){var v=vtx(i,Rm);return v.x.toFixed(1)+','+v.y.toFixed(1);}).join(' ');
+  h+='<polygon points="'+outerPts+'" fill="'+bgFill+'"/>';
+  /* 격자 3단 — 선명하게 */
+  [1,0.67,0.33].forEach(function(s){
+    var pts=[0,1,2].map(function(i){var v=vtx(i,Rm*s);return v.x.toFixed(1)+','+v.y.toFixed(1);}).join(' ');
+    h+='<polygon points="'+pts+'" fill="none" stroke="'+gridCol+'" stroke-width="1"/>';
+  });
+  /* 축선 */
+  [0,1,2].forEach(function(i){
+    var v=vtx(i,Rm);
+    h+='<line x1="'+cx+'" y1="'+cy+'" x2="'+v.x.toFixed(1)+'" y2="'+v.y.toFixed(1)+'" stroke="'+axisCol+'" stroke-width="1"/>';
+  });
+  /* 데이터 폴리곤 — fill 불투명도 높이고 stroke 굵게 */
+  var dpts=[0,1,2].map(function(i){
+    var v=vtx(i,Rm*Math.max(0.05,pcts[i]/100));
+    return v.x.toFixed(1)+','+v.y.toFixed(1);
+  }).join(' ');
+  h+='<polygon points="'+dpts+'" fill="'+activeColor+'" fill-opacity="0.45" stroke="'+activeColor+'" stroke-width="2.5" stroke-linejoin="round"/>';
+  /* 꼭짓점 점 — 크게 */
+  [0,1,2].forEach(function(i){
+    var v=vtx(i,Rm*Math.max(0.05,pcts[i]/100));
+    h+='<circle cx="'+v.x.toFixed(1)+'" cy="'+v.y.toFixed(1)+'" r="4" fill="'+activeColor+'" stroke="#fff" stroke-width="1.5"/>';
+  });
+  /* 레이블 */
+  var lnames=['절대','상대','시간'];
+  [0,1,2].forEach(function(i){
+    var v=vtx(i,Rm+14);
+    h+='<text x="'+v.x.toFixed(1)+'" y="'+v.y.toFixed(1)+'" font-size="9" fill="'+activeColor+'" font-weight="600" text-anchor="middle" dominant-baseline="middle">'+lnames[i]+'</text>';
+  });
+  return h;
+}
+
+function s3Render(){
+  var d=s3GetD();
+  var isSell=d.mainDir==='sell';
+
+  /* 순매도: 옅은 파랑 배경 + 진한 파랑 라인 */
+  var SELL_BG    = '#EBF2FE';          /* 아주 옅은 파랑 배경 */
+  var SELL_DATA  = '#1248B3';          /* 진한 파랑 — 레이더 선/면/점 */
+  var SELL_GRID  = 'rgba(18,72,179,0.22)';
+  var SELL_AXIS  = 'rgba(18,72,179,0.15)';
+  var SELL_TITLE = '#0A2E7A';
+  var SELL_RANK  = '#1248B3';
+
+  /* 순매수: 옅은 빨강 배경 + 진한 빨강 라인 */
+  var BUY_BG    = '#FEECEC';           /* 아주 옅은 빨강 배경 */
+  var BUY_DATA  = '#B82020';           /* 진한 빨강 — 레이더 선/면/점 */
+  var BUY_GRID  = 'rgba(184,32,32,0.22)';
+  var BUY_AXIS  = 'rgba(184,32,32,0.15)';
+  var BUY_TITLE = '#7A0A0A';
+  var BUY_RANK  = '#B82020';
+
+  /* 비활성 */
+  var OFF_BG    = '#F4F5F0';
+  var OFF_DATA  = '#B8BDB4';
+  var OFF_GRID  = 'rgba(0,0,0,0.10)';
+  var OFF_AXIS  = 'rgba(0,0,0,0.07)';
+
+  /* 노트 */
+  var noteEl=document.getElementById('s3-note');
+  if(noteEl) noteEl.textContent=d.name+' · 오늘';
+
+  var sd=d.sell, bd=d.buy;
+  var sellPcts=[sd.abs.pct,sd.rel.pct,sd.time.pct];
+  var buyPcts=[bd.abs.pct,bd.rel.pct,bd.time.pct];
+
+  function setBox(boxId,titleId,svgId,ranksId,active,pcts,dirData,dirVal,bgC,dataC,gridC,axisC,titleC,rankC){
+    var box=document.getElementById(boxId);
+    var title=document.getElementById(titleId);
+    var svgEl=document.getElementById(svgId);
+    var ranks=document.getElementById(ranksId);
+    if(!box||!svgEl) return;
+    if(active){
+      box.style.cssText='border-radius:12px;padding:12px 10px;text-align:center;background:'+bgC+';border:1.5px solid '+dataC+';';
+      title.style.cssText='font-size:11px;font-weight:600;margin-bottom:4px;color:'+titleC+';';
+      svgEl.innerHTML=s3Radar(pcts,dataC,gridC,axisC,bgC);
+      ranks.style.color=rankC;
+      if(dirVal){
+        ranks.innerHTML='<strong style="font-size:13px;color:'+rankC+';">'+dirVal+'</strong><br>'
+          +'<span style="font-size:10px;color:'+rankC+';opacity:.7;">절대 '+dirData.abs.rank+'위 &nbsp;·&nbsp; 상대 '+dirData.rel.rank+'위<br>시간 '+dirData.time.rank+'번째</span>';
+      } else {
+        ranks.innerHTML='<span style="font-size:12px;color:'+rankC+';">—</span>';
+      }
+    } else {
+      box.style.cssText='border-radius:12px;padding:12px 10px;text-align:center;background:'+OFF_BG+';border:0.5px solid var(--border);';
+      title.style.cssText='font-size:11px;font-weight:600;margin-bottom:4px;color:var(--text3);';
+      svgEl.innerHTML=s3Radar(pcts,OFF_DATA,OFF_GRID,OFF_AXIS,OFF_BG);
+      ranks.style.color='var(--text3)';
+      ranks.innerHTML='<span style="font-size:12px;">—</span>';
+    }
+  }
+
+  setBox('s3-sell-box','s3-sell-title','s3-sell-svg','s3-sell-ranks',
+    isSell, sellPcts, sd, sd.val,
+    SELL_BG, SELL_DATA, SELL_GRID, SELL_AXIS, SELL_TITLE, SELL_RANK);
+  setBox('s3-buy-box','s3-buy-title','s3-buy-svg','s3-buy-ranks',
+    !isSell, buyPcts, bd, bd.val,
+    BUY_BG, BUY_DATA, BUY_GRID, BUY_AXIS, BUY_TITLE, BUY_RANK);
+
+  /* 상세 리스트 */
+  var mainD=d[d.mainDir];
+  var dirLabel=isSell?'매도':'매수';
+  var activeCol   = isSell ? SELL_DATA : BUY_DATA;
+  var activeBgChip= isSell ? 'rgba(18,72,179,0.10)' : 'rgba(184,32,32,0.10)';
+  var html='';
+  S3TYPES.forEach(function(t,idx){
+    var item=mainD[t.key];
+    var empty=!item.rank;
+    var rankTxt=empty?'—':(t.key==='time'?item.rank+'번째':dirLabel+' '+item.rank+'위');
+    var totalTxt=empty?'':(t.key==='time'?'/ '+item.total+'거래일':'/ '+item.total+'종목');
+    html+=
+      '<div style="padding:11px 0;'+(idx>0?'border-top:0.5px solid var(--border);':'')+'">'+
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:7px;">'+
+          '<div>'+
+            '<div style="font-size:12px;font-weight:500;color:var(--text1);margin-bottom:2px;">'+t.label+'</div>'+
+            '<div style="font-size:10px;color:var(--text3);">'+t.sub+'</div>'+
+          '</div>'+
+          '<div style="text-align:right;">'+
+            '<div style="font-size:15px;font-weight:700;color:'+(empty?'var(--text3)':activeCol)+';">'+rankTxt+'</div>'+
+            '<div style="font-size:10px;color:var(--text3);">'+totalTxt+'</div>'+
+          '</div>'+
+        '</div>'+
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">'+
+          '<div style="flex:1;height:7px;background:#EAECEC;border-radius:4px;overflow:hidden;">'+
+            '<div style="width:'+(empty?2:item.pct)+'%;height:7px;border-radius:4px;background:'+(empty?'#CCC':activeCol)+';"></div>'+
+          '</div>'+
+          '<span style="font-size:11px;font-weight:600;color:'+(empty?'var(--text3)':activeCol)+';min-width:52px;text-align:right;">'+(empty?'':item.note)+'</span>'+
+        '</div>'+
+        '<div style="display:flex;gap:5px;flex-wrap:wrap;">'+
+          (empty
+            ? '<span style="display:inline-flex;font-size:10px;padding:2px 8px;border-radius:20px;background:var(--surface2);color:var(--text3);">해당 없음</span>'
+            : '<span style="display:inline-flex;font-size:10px;padding:2px 8px;border-radius:20px;background:'+activeBgChip+';color:'+activeCol+';font-weight:500;">'+item.amount+'</span>'+
+              '<span style="display:inline-flex;font-size:10px;padding:2px 8px;border-radius:20px;background:var(--surface2);color:var(--text2);">'+item.comp+'</span>'+
+              '<span style="display:inline-flex;font-size:10px;padding:2px 8px;border-radius:20px;'+s3LevelStyle(item.level)+'">'+item.level+'</span>'
+          )+
+        '</div>'+
+      '</div>';
+  });
+  var dl=document.getElementById('s3-detail-list');
+  if(dl) dl.innerHTML=html;
+
+  /* 요약 */
+  var sm=document.getElementById('s3-summary');
+  if(sm){
+    sm.style.cssText='margin-top:14px;padding:10px 12px;border-radius:var(--radius-md);font-size:12px;line-height:1.6;background:'+(isSell?SELL_BG:BUY_BG)+';color:'+activeCol+';border:1px solid '+(isSell?'rgba(18,72,179,0.15)':'rgba(184,32,32,0.15)')+';';
+    sm.innerHTML=d.summary;
+  }
+}
+
+function s3BuildSubs(){
+  var wrap=document.getElementById('s3-subrow');if(!wrap) return;
+  wrap.innerHTML='';
+  S3DETS.forEach(function(d){
+    var btn=document.createElement('button');
+    btn.style.cssText='font-size:11px;padding:5px 12px;border-radius:6px;border:1.5px solid rgba(0,0,0,0.15);background:#F0F1EC;color:#484D42;cursor:pointer;font-weight:500;';
+    btn.textContent=d.k;
+    if(d.k===s3st.sub){btn.style.background=d.c;btn.style.color='#fff';}
+    btn.onclick=function(){
+      s3st.sub=d.k;
+      wrap.querySelectorAll('button').forEach(function(b){b.style.cssText='font-size:11px;padding:5px 12px;border-radius:6px;border:1.5px solid rgba(0,0,0,0.15);background:#F0F1EC;color:#484D42;cursor:pointer;font-weight:500;';});
+      btn.style.background=d.c;btn.style.color='#fff';
+      s3Render();
+    };
+    wrap.appendChild(btn);
+  });
+}
+
+var s3etEl=document.getElementById('s3-etabs');
+if(s3etEl) s3etEl.onclick=function(e){
+  var b=e.target.closest('[data-e]');if(!b) return;
+  s3st.ent=b.dataset.e;s3st.detOpen=false;
+  document.querySelectorAll('#s3-etabs [data-e]').forEach(function(x){x.classList.remove('on');});
+  b.classList.add('on');
+  var db=document.getElementById('s3-detbtn');
+  if(db){db.style.cssText='border-style:dashed;';db.textContent='세부 ↓';db.classList.remove('on');}
+  var sp=document.getElementById('s3-subpanel');if(sp) sp.style.display='none';
+  s3Render();
+};
+
+var s3db=document.getElementById('s3-detbtn');
+if(s3db) s3db.onclick=function(){
+  s3st.detOpen=!s3st.detOpen;
+  var sp=document.getElementById('s3-subpanel');
+  if(s3st.detOpen){
+    document.querySelectorAll('#s3-etabs [data-e]').forEach(function(x){x.classList.remove('on');});
+    s3db.style.cssText='font-size:11px;padding:5px 12px;border-radius:6px;border:1.5px solid #8DB800;background:#F0FAC8;color:#4A6800;cursor:pointer;font-weight:600;';
+    s3db.textContent='세부 ↑';
+    if(sp) sp.style.display='block';
+    s3BuildSubs();
+  } else {
+    s3db.style.cssText='font-size:11px;padding:5px 12px;border-radius:6px;border:1.5px dashed rgba(0,0,0,0.20);background:#F0F1EC;color:#484D42;cursor:pointer;font-weight:500;';
+    s3db.textContent='세부 ↓';
+    if(sp) sp.style.display='none';
+    s3st.ent='inst';
+    var inst=document.querySelector('#s3-etabs [data-e="inst"]');if(inst) inst.classList.add('on');
+  }
+  s3Render();
+};
+
+setTimeout(s3Render, 120);
+})();
+
+/* ── STEP 4 섹터 안에서의 위치 ── */
+(function(){
+var S4STOCKS=[
+  {n:'삼성전자',  mc:188},
+  {n:'SK하이닉스',mc:55},
+  {n:'한미반도체', mc:8.2},
+  {n:'리노공업',   mc:2.8},
+  {n:'HPSP',      mc:3.1},
+  {n:'솔브레인',   mc:1.4},
+  {n:'이오테크닉스',mc:1.8},
+  {n:'원익IPS',    mc:0.9},
+  {n:'동진쎄미컴', mc:0.7},
+];
+var S4DATA={
+  inst:[-1655,120,-88,-42,35,-28,18,-15,8],
+  fore:[-444,-210,55,22,-18,12,-9,6,-4],
+  ind: [1966,310,-44,-18,88,-22,44,-12,28],
+};
+var S4DETS=[
+  {k:'금융투자',c:'#1A5FD4',v:[-408,55,-22,-18,12,-8,6,-4,3]},
+  {k:'투신',    c:'#D97706',v:[-91,22,-14,8,-6,4,-3,2,-1]},
+  {k:'보험',    c:'#E83030',v:[-58,18,-8,-4,6,-2,3,-1,2]},
+  {k:'연기금',  c:'#1D9E6B',v:[12,8,4,2,3,1,2,1,1]},
+  {k:'사모펀드',c:'#6B46C8',v:[-31,9,-6,-3,4,-2,2,-1,1]},
+];
+var S4HL='삼성전자';
+var s4st={ent:'inst',detOpen:false,sub:'금융투자',mode:'amt'};
+
+var S4MODE_ON ='flex:1;text-align:center;font-size:11px;font-weight:600;padding:5px;border-radius:6px;cursor:pointer;background:#fff;color:#1A5FD4;';
+var S4MODE_OFF='flex:1;text-align:center;font-size:11px;font-weight:500;padding:5px;border-radius:6px;cursor:pointer;color:#484D42;';
+
+function s4GetRaw(){
+  if(s4st.detOpen) return (S4DETS.filter(function(x){return x.k===s4st.sub;})[0]||S4DETS[0]).v;
+  return S4DATA[s4st.ent];
+}
+function s4EntName(){
+  return s4st.detOpen?s4st.sub:{inst:'기관',fore:'외국인',ind:'개인'}[s4st.ent];
+}
+
+function s4Render(){
+  var raw=s4GetRaw();
+  var items=S4STOCKS.map(function(s,i){
+    return{n:s.n, amt:raw[i], pct:Math.round(raw[i]/s.mc*100)/100};
+  });
+  var sk=s4st.mode==='amt'?'amt':'pct';
+  items.sort(function(a,b){return b[sk]-a[sk];});
+  var maxAbs=Math.max.apply(null,items.map(function(x){return Math.abs(x[sk]);}));
+
+  var noteEl=document.getElementById('s4-note');
+  if(noteEl) noteEl.textContent='반도체 · '+s4EntName();
+
+  var html='';
+  items.forEach(function(s,i){
+    var val=s[sk];
+    var pw=maxAbs>0?Math.round(Math.abs(val)/maxAbs*100):2;
+    var isBuy=val>=0;
+    var col=isBuy?'var(--buy)':'var(--sell)';
+    var lbl=s4st.mode==='amt'?((isBuy?'+':'')+val+'억'):((isBuy?'+':'')+val+'%');
+    var isHL=s.n===S4HL;
+    html+=
+      '<div style="display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:6px;margin-bottom:2px;'+(isHL?'background:#F0FAC8;border:1.5px solid #8DB800;':'background:transparent;border:1.5px solid transparent;')+'">' +
+        '<span style="font-size:10px;color:var(--text3);width:14px;text-align:center;flex-shrink:0;">'+(i+1)+'</span>'+
+        '<span style="font-size:12px;width:72px;flex-shrink:0;'+(isHL?'font-weight:600;color:#4A6800;':'color:var(--text1);')+'">'+s.n+'</span>'+
+        '<div style="flex:1;height:8px;background:#EAECEC;border-radius:4px;overflow:hidden;">'+
+          '<div style="height:8px;border-radius:4px;background:'+col+';width:'+Math.max(2,pw)+'%;"></div>'+
+        '</div>'+
+        '<span style="font-size:11px;font-weight:500;min-width:58px;text-align:right;flex-shrink:0;color:'+col+';">'+lbl+'</span>'+
+      '</div>';
+  });
+  var el=document.getElementById('s4-list');
+  if(el) el.innerHTML=html;
+}
+
+function s4BuildSubs(){
+  var wrap=document.getElementById('s4-subrow');if(!wrap)return;
+  wrap.innerHTML='';
+  S4DETS.forEach(function(d){
+    var btn=document.createElement('button');
+    btn.style.cssText='font-size:11px;padding:4px 10px;border-radius:6px;border:1.5px solid rgba(0,0,0,0.12);background:#F0F1EC;color:#484D42;cursor:pointer;';
+    btn.textContent=d.k;
+    if(d.k===s4st.sub){btn.style.background=d.c;btn.style.color='#fff';btn.style.borderColor=d.c;}
+    btn.onclick=function(){
+      s4st.sub=d.k;
+      wrap.querySelectorAll('button').forEach(function(b){b.style.cssText='font-size:11px;padding:4px 10px;border-radius:6px;border:1.5px solid rgba(0,0,0,0.12);background:#F0F1EC;color:#484D42;cursor:pointer;';});
+      btn.style.background=d.c;btn.style.color='#fff';btn.style.borderColor=d.c;
+      s4Render();
+    };
+    wrap.appendChild(btn);
+  });
+}
+
+var s4mt=document.getElementById('s4-mode-tabs');
+if(s4mt) s4mt.onclick=function(e){
+  var b=e.target.closest('[data-m]');if(!b)return;
+  s4st.mode=b.dataset.m;
+  document.querySelectorAll('#s4-mode-tabs [data-m]').forEach(function(x){
+    x.style.cssText=x.dataset.m===s4st.mode?S4MODE_ON:S4MODE_OFF;
+  });
+  s4Render();
+};
+
+var s4et=document.getElementById('s4-tabs');
+if(s4et) s4et.onclick=function(e){
+  var b=e.target.closest('[data-e]');if(!b)return;
+  s4st.ent=b.dataset.e;s4st.detOpen=false;
+  document.querySelectorAll('#s4-tabs [data-e]').forEach(function(x){x.classList.remove('on');});
+  b.classList.add('on');
+  var db=document.getElementById('s4-detbtn');
+  if(db){db.className='ltab';db.style.borderStyle='dashed';db.textContent='세부 ↓';}
+  var sp=document.getElementById('s4-subpanel');if(sp)sp.style.display='none';
+  s4Render();
+};
+
+var s4db=document.getElementById('s4-detbtn');
+if(s4db) s4db.onclick=function(){
+  s4st.detOpen=!s4st.detOpen;
+  var sp=document.getElementById('s4-subpanel');
+  if(s4st.detOpen){
+    document.querySelectorAll('#s4-tabs [data-e]').forEach(function(x){x.classList.remove('on');});
+    s4db.style.cssText='font-size:11px;padding:5px 12px;border-radius:6px;border:1.5px solid #8DB800;background:#F0FAC8;color:#4A6800;cursor:pointer;font-weight:600;';
+    s4db.textContent='세부 ↑';
+    if(sp)sp.style.display='block';
+    s4BuildSubs();
+  } else {
+    s4db.className='ltab';s4db.textContent='세부 ↓';
+    if(sp)sp.style.display='none';
+    s4st.ent='inst';
+    var inst=document.querySelector('#s4-tabs [data-e="inst"]');if(inst)inst.classList.add('on');
+  }
+  s4Render();
+};
+
+setTimeout(s4Render,140);
+})();
+</script>
+</body>
+</html>
